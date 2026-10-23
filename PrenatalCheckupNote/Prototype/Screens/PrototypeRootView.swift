@@ -49,8 +49,8 @@ struct PrototypeRootView: View {
             AppointmentDetailView(appointmentID: appointmentID)
         case .beforeExam(let appointmentID):
             BeforeExamView(appointmentID: appointmentID)
-        case .duringExam:
-            PrototypePlaceholderView(title: "診察中")
+        case .duringExam(let appointmentID):
+            DuringExamView(appointmentID: appointmentID)
         case .afterExam:
             PrototypePlaceholderView(title: "健診を完了する")
         case .sharePreview(let appointmentID):

@@ -27,6 +27,31 @@ final class PrototypeStore {
         failures = scenario.initialFailures
     }
 
+    /// 回答メモ（診察中の短いメモを含む）を保存する。
+    ///
+    /// 保存の失敗を起こす設定のときは保存せず、入力を「未保存のメモ」として残す。
+    /// 確認記録の状態（回答済み・持ち越し）は、メモの保存とは別に記録するため、メモの失敗では変わらない（11章「診察中の短いメモ」）。
+    /// - Returns: 保存できたら `true`。
+    @discardableResult
+    func saveMemo(_ text: String, checkID: UUID, in appointmentID: UUID) -> Bool {
+        if failures.memoSave {
+            data.unsavedMemos[checkID] = text
+            return false
+        }
+        data.saveMemo(text, ofCheck: checkID, in: appointmentID)
+        return true
+    }
+
+    /// 未保存のメモを、もう一度保存する。その時点で残っている最新の入力を保存する。
+    ///
+    /// 新しい内容の保存に成功した後は未保存のメモが残っていないため、古い入力で上書きすることはない（14章 M-09）。
+    /// - Returns: 保存できたら `true`。未保存のメモがなければ何もせず `false`。
+    @discardableResult
+    func retryUnsavedMemo(checkID: UUID, in appointmentID: UUID) -> Bool {
+        guard let text = data.unsavedMemos[checkID] else { return false }
+        return saveMemo(text, checkID: checkID, in: appointmentID)
+    }
+
     /// 状態を切り替えた直後に開く画面までの道のり。
     var startPath: [PrototypeRoute] {
         let currentID = data.currentAppointmentID

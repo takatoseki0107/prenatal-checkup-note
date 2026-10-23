@@ -89,3 +89,28 @@ extension PrototypeData {
         }
     }
 }
+
+extension PrototypeData {
+    /// 確認記録の状態を変える。診察中の「回答済み」「持ち越し」と、その取り消し（未確認に戻す）に使う（11章#5〜#8）。
+    ///
+    /// 回答メモは変えない。取り消してもメモは残る（11章#6）。
+    nonisolated mutating func setStatus(_ status: CheckStatus, ofCheck checkID: UUID, in appointmentID: UUID) {
+        guard let location = checkLocation(checkID, in: appointmentID) else { return }
+        appointments[location.appointment].checks[location.check].status = status
+    }
+
+    /// 回答メモを保存する。保存に失敗して残っていた入力（未保存のメモ）は、新しい内容で保存できたので消す（11章「未保存の短いメモの回復」）。
+    nonisolated mutating func saveMemo(_ text: String, ofCheck checkID: UUID, in appointmentID: UUID) {
+        guard let location = checkLocation(checkID, in: appointmentID) else { return }
+        appointments[location.appointment].checks[location.check].answerMemo = text
+        unsavedMemos[checkID] = nil
+    }
+
+    /// 確認記録が、健診の一覧と記録の一覧の何番目にあるか。
+    private nonisolated func checkLocation(_ checkID: UUID, in appointmentID: UUID) -> (appointment: Int, check: Int)? {
+        guard let appointmentIndex = appointments.firstIndex(where: { $0.id == appointmentID }),
+              let checkIndex = appointments[appointmentIndex].checks.firstIndex(where: { $0.id == checkID })
+        else { return nil }
+        return (appointmentIndex, checkIndex)
+    }
+}
