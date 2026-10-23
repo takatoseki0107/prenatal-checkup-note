@@ -99,7 +99,6 @@ struct AppointmentDetailView: View {
             CancelGuidanceSheet(dateText: dateText(appointment), guidance: guidance) { choice in
                 pendingGuidanceChoice = choice
             }
-            .presentationDetents([.medium, .large])
         }
     }
 

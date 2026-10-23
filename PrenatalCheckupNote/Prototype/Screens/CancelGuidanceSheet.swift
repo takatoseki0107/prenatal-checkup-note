@@ -89,6 +89,7 @@ struct CancelGuidanceSheet: View {
         }
     }
 
+    /// 枠のあるボタン。下の帯の上では `.bordered` の背景がほとんど見えず、文字だけに見えたため、枠を自分で描く。
     private func choiceButton(_ title: String, choice: CancelGuidanceChoice) -> some View {
         Button {
             onChoose(choice)
@@ -96,9 +97,16 @@ struct CancelGuidanceSheet: View {
         } label: {
             Text(title)
                 .font(.headline)
-                .frame(maxWidth: .infinity)
+                .foregroundStyle(.tint)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor, lineWidth: 1.5)
+                )
+                .contentShape(Rectangle())
         }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
+        .buttonStyle(.plain)
     }
 }
