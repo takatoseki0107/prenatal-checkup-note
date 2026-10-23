@@ -29,13 +29,18 @@ final class PrototypeStore {
 
     /// 回答メモ（診察中の短いメモを含む）を保存する。
     ///
-    /// 保存の失敗を起こす設定のときは保存せず、入力を「未保存のメモ」として残す。
+    /// 保存の失敗を起こす設定のときは保存しない。
     /// 確認記録の状態（回答済み・持ち越し）は、メモの保存とは別に記録するため、メモの失敗では変わらない（11章「診察中の短いメモ」）。
+    /// - Parameter keepsUnsavedOnFailure: 失敗したとき、入力を「未保存のメモ」として残すか。
+    ///   診察中の短いメモでは残す。回答メモの編集画面では残さず、入力は画面に残して再試行させる。
+    ///   編集画面の「キャンセル」で、その画面での変更を破棄できるようにするため（11章#18、14章 M-05・M-11）。
     /// - Returns: 保存できたら `true`。
     @discardableResult
-    func saveMemo(_ text: String, checkID: UUID, in appointmentID: UUID) -> Bool {
+    func saveMemo(_ text: String, checkID: UUID, in appointmentID: UUID, keepsUnsavedOnFailure: Bool = true) -> Bool {
         if failures.memoSave {
-            data.unsavedMemos[checkID] = text
+            if keepsUnsavedOnFailure {
+                data.unsavedMemos[checkID] = text
+            }
             return false
         }
         data.saveMemo(text, ofCheck: checkID, in: appointmentID)

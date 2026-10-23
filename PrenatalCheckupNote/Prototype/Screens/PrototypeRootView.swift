@@ -51,26 +51,11 @@ struct PrototypeRootView: View {
             BeforeExamView(appointmentID: appointmentID)
         case .duringExam(let appointmentID):
             DuringExamView(appointmentID: appointmentID)
-        case .afterExam:
-            PrototypePlaceholderView(title: "健診を完了する")
+        case .afterExam(let appointmentID):
+            AfterExamView(appointmentID: appointmentID)
         case .sharePreview(let appointmentID):
             SharePreviewView(appointmentID: appointmentID)
         }
-    }
-}
-
-/// まだ作っていない画面の代わりに出す画面。段階1の続きのプルリクエストで、ワイヤーどおりの画面に置き換える。
-struct PrototypePlaceholderView: View {
-    let title: String
-
-    var body: some View {
-        ContentUnavailableView(
-            title,
-            systemImage: "hammer",
-            description: Text("この画面は、段階1の続きで作ります。")
-        )
-        .navigationTitle(title)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
