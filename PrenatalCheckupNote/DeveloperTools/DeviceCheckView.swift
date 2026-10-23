@@ -184,19 +184,48 @@ private struct ShareCheckSection: View {
             Text(DeviceCheckSample.questionList)
                 .font(.callout)
             ShareLink(item: DeviceCheckSample.questionList) {
-                Label("共有シートを開く", systemImage: "square.and.arrow.up")
+                Label("A. 共有シートを開く（標準）", systemImage: "square.and.arrow.up")
             }
             Button {
                 presentPrintPanel()
             } label: {
-                Label("印刷の画面を直接開く（比較用）", systemImage: "printer")
+                Label("B. 印刷の画面を直接開く", systemImage: "printer")
             }
             .disabled(!UIPrintInteractionController.isPrintingAvailable)
+            Button {
+                presentShareSheetWithPrint()
+            } label: {
+                Label("C. 共有シートを開く（印刷つき）", systemImage: "square.and.arrow.up.on.square")
+            }
         } header: {
             Text("3. 共有シートと印刷（TV-04）")
         } footer: {
-            Text("共有シートに「プリント」が出るか、印刷のプレビューで文字が切れずに表示されるかを見ます。プリンタがなくても、プレビューまでは確認できます。")
+            Text("A・Cでは共有シートに「プリント」が出るかを、B・Cでは印刷のプレビューで文字が切れずに表示されるかを見ます。プリンタがなくても、プレビューまでは確認できます。")
         }
+    }
+
+    /// 共有シートに、文章と一緒に印刷用の項目も渡す。1つのボタンで、共有と印刷のどちらも選べるかを確かめる。
+    private func presentShareSheetWithPrint() {
+        let formatter = UISimpleTextPrintFormatter(text: DeviceCheckSample.questionList)
+        formatter.perPageContentInsets = UIEdgeInsets(top: 72, left: 72, bottom: 72, right: 72)
+
+        let activityController = UIActivityViewController(
+            activityItems: [DeviceCheckSample.questionList, formatter],
+            applicationActivities: nil
+        )
+        topViewController()?.present(activityController, animated: true)
+    }
+
+    /// いま一番手前に表示されている画面を探す。SwiftUIの画面の上に、UIKitの共有シートを重ねて表示するために使う。
+    private func topViewController() -> UIViewController? {
+        let windowScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+        var top = windowScene?.keyWindow?.rootViewController
+        while let presented = top?.presentedViewController {
+            top = presented
+        }
+        return top
     }
 
     /// 共有シートだけでは印刷できなかった場合に備えて、専用の印刷処理で印刷の画面を開けるかも比べる。
