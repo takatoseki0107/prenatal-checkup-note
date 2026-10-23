@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test (iOS Simulator)
+    # プロジェクトはXcode 27の形式で作られているため、Xcode 27が入ったイメージを使う（public preview）。
+    # 判断の記録: docs/adr/0003-ci-runner.md
+    runs-on: xcode-27
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = [key for key in devices if ".iOS-" in key]
+          runtimes.sort(key=lambda key: [int(part) for part in key.split(".iOS-")[1].split("-")], reverse=True)
+          for key in runtimes:
+              for device in devices[key]:
+                  if device["name"].startswith("iPhone") and device.get("isAvailable", False):
+                      print(device["udid"])
+                      sys.exit(0)
+          sys.exit("No available iPhone simulator")
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices available | grep "$UDID"
+
+      - name: Build and run tests
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project PrenatalCheckupNote.xcodeproj \
+            -scheme PrenatalCheckupNote \
+            -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: TestResults
+          path: TestResults.xcresult
