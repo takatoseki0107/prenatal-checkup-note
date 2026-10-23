@@ -53,6 +53,8 @@ struct DuringQuestionListSheet: View {
                     Text(check.questionText)
                         .fontWeight(isCurrent ? .bold : .regular)
                         .foregroundStyle(.primary)
+                        // ボタンの中の文章は中央にそろうため、左にそろえ直す。
+                        .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if isCurrent {
                         Text("表示中")
@@ -66,7 +68,8 @@ struct DuringQuestionListSheet: View {
                 .contentShape(Rectangle())
             }
             // 1行に2つのボタン（移動と再試行）を置くため、行全体ではなくボタンごとに反応させる。
-            .buttonStyle(.borderless)
+            // `.borderless` では文字がすべてボタンの色（青）になるため、色を変えない `.plain` を使う。
+            .buttonStyle(.plain)
 
             if store.data.unsavedMemos[check.id] != nil {
                 HStack {
