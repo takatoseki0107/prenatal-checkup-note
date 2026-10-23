@@ -31,7 +31,8 @@ iPhone 17 Pro（iOS 27.0.1）での結果です。
 
 ## 影響
 
-- `ShareLink` では印刷用の項目を渡せないため、UIKit の `UIActivityViewController` を使います。SwiftUI の画面から表示する方法（`UIViewControllerRepresentable` で包むか、UIKit の画面から直接表示するか）は、段階1で共有プレビュー画面を作るときに決めます。確認用の画面では、UIKit の画面から直接表示しました。
+- `ShareLink` では印刷用の項目を渡せないため、UIKit の `UIActivityViewController` を使います。
+- SwiftUI の画面からは、いま手前にある画面から UIKit で直接表示します（段階1の共有プレビュー画面で決定。`ShareSheetPresenter`）。`UIViewControllerRepresentable` で包んで SwiftUI のシートとして出す方法では、共有シートが閉じたときに空のシートが残らないよう、表示の状態を戻す処理が要ります。開くだけなら直接表示のほうが単純で、TV-04 の実機確認でもこの方法を使いました。
 - 確認したのは iOS 27.0.1 の実機だけです。iOS 26 では、共有プレビュー画面を作るときにシミュレーターで確かめます。
 - 共有先は「メモ」でしか確かめていません。ほかの共有先で文章の扱いに問題が見つかったら、渡し方を見直します。
 - 文字の大きさや余白、改ページは、必要なら段階1で調整します。
