@@ -24,21 +24,34 @@ jobs:
 
       - name: Pick an iPhone simulator
         id: simulator
+        # 一番新しい iOS の中から、通常の iPhone（例：iPhone 17、iPhone 17 Pro）を選ぶ。
+        # 折りたたみなど特殊な機種は起動が遅く、画面テストが時間切れになったため避ける。
+        # 通常の機種がなければ、どの iPhone でも使う。判断の記録: docs/adr/0003-ci-runner.md
         run: |
           UDID=$(xcrun simctl list devices available -j | python3 -c '
-          import json, sys
+          import json, re, sys
           devices = json.load(sys.stdin)["devices"]
           runtimes = [key for key in devices if ".iOS-" in key]
           runtimes.sort(key=lambda key: [int(part) for part in key.split(".iOS-")[1].split("-")], reverse=True)
-          for key in runtimes:
-              for device in devices[key]:
-                  if device["name"].startswith("iPhone") and device.get("isAvailable", False):
-                      print(device["udid"])
-                      sys.exit(0)
-          sys.exit("No available iPhone simulator")
+          iphones = [
+              device
+              for key in runtimes
+              for device in devices[key]
+              if device["name"].startswith("iPhone") and device.get("isAvailable", False)
+          ]
+          regular = [device for device in iphones if re.fullmatch(r"iPhone \d+( Pro)?", device["name"])]
+          if not iphones:
+              sys.exit("No available iPhone simulator")
+          print((regular or iphones)[0]["udid"])
           ')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           xcrun simctl list devices available | grep "$UDID"
+
+      - name: Boot the simulator
+        # 起動に時間がかかっても、画面テストの「アプリの起動待ち」の時間に含まれないよう、先に起動しておく。
+        run: |
+          xcrun simctl boot "${{ steps.simulator.outputs.udid }}" || true
+          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
 
       - name: Build and run tests
         run: |
@@ -47,6 +60,7 @@ jobs:
             -project PrenatalCheckupNote.xcodeproj \
             -scheme PrenatalCheckupNote \
             -destination "id=${{ steps.simulator.outputs.udid }}" \
+            -parallel-testing-enabled NO \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO
 
