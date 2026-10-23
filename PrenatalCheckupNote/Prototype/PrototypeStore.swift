@@ -84,6 +84,18 @@ final class PrototypeStore {
         return .completed
     }
 
+    /// 健診をキャンセルする。要件定義 11章#15。
+    ///
+    /// 書き換えは写しの上で行い、最後に1回だけ置き換える。キャンセルできないときは何も変えない。
+    /// - Returns: キャンセルしたら `true`。
+    @discardableResult
+    func cancel(_ appointmentID: UUID) -> Bool {
+        var updated = data
+        guard updated.cancel(appointmentID) else { return false }
+        data = updated
+        return true
+    }
+
     /// 状態を切り替えた直後に開く画面までの道のり。
     var startPath: [PrototypeRoute] {
         let currentID = data.currentAppointmentID
