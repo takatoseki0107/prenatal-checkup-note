@@ -7,24 +7,13 @@
 
 import SwiftUI
 
+/// アプリの最初の画面。
+///
+/// 段階1（画面の試作）では、健診タブにあたる画面の流れだけを表示する。
+/// ホーム・記録・健診の3つのタブ（要件定義 8章）は、段階3以降で作る。
 struct ContentView: View {
     var body: some View {
-        NavigationStack {
-            VStack {
-                Image(systemName: "globe")
-                    .imageScale(.large)
-                    .foregroundStyle(.tint)
-                Text("Hello, world!")
-            }
-            .padding()
-            #if DEBUG
-            .toolbar {
-                NavigationLink("動作確認") {
-                    DeviceCheckView()
-                }
-            }
-            #endif
-        }
+        PrototypeRootView()
     }
 }
 
