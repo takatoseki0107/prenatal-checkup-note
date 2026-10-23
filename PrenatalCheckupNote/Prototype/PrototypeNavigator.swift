@@ -13,4 +13,15 @@ final class PrototypeNavigator {
     func push(_ route: PrototypeRoute) {
         path.append(route)
     }
+
+    /// 健診詳細まで戻る。健診を完了した後に、健診モードの画面をまとめて閉じるのに使う。
+    ///
+    /// 道のりに健診詳細がなければ、健診詳細だけを開いた状態にする。
+    func popToAppointment(_ appointmentID: UUID) {
+        if let index = path.firstIndex(of: .appointment(appointmentID)) {
+            path.removeSubrange(path.index(after: index)...)
+        } else {
+            path = [.appointment(appointmentID)]
+        }
+    }
 }

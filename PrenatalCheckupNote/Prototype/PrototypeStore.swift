@@ -57,6 +57,33 @@ final class PrototypeStore {
         return saveMemo(text, checkID: checkID, in: appointmentID)
     }
 
+    /// 未保存のメモを破棄し、保存済みのメモに戻す。利用者が明示的に選んだときだけ呼ぶ（11章「未保存の短いメモの回復」）。
+    func discardUnsavedMemo(checkID: UUID) {
+        data.unsavedMemos[checkID] = nil
+    }
+
+    /// 健診の完了の仮入力を、まとめて保存する（最終確定）。要件定義 11章#9、14章 C-05・C-12・P-02・M-10。
+    ///
+    /// 完了できないときと、保存に失敗したときは、データを何も変えない。
+    /// 書き換えは写しの上で行い、最後に1回だけ置き換える。途中まで保存された状態を作らないため。
+    func complete(_ appointmentID: UUID, with draft: CompletionDraft, now: Date = .now) -> CompletionOutcome {
+        // 未保存のメモがあるうちは、完了の前に止める。破棄は利用者が選ぶ（M-10）。
+        guard data.unsavedMemoCheckIDs(in: appointmentID).isEmpty else {
+            return .hasUnsavedMemos
+        }
+        let problems = data.completionProblems(of: appointmentID, with: draft, now: now)
+        guard problems.isEmpty else {
+            return .rejected(problems)
+        }
+        if failures.completionSave {
+            return .saveFailed
+        }
+        var updated = data
+        updated.complete(appointmentID, with: draft, now: now)
+        data = updated
+        return .completed
+    }
+
     /// 状態を切り替えた直後に開く画面までの道のり。
     var startPath: [PrototypeRoute] {
         let currentID = data.currentAppointmentID
