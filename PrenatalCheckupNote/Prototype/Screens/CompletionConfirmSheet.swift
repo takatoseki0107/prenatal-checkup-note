@@ -36,18 +36,20 @@ struct CompletionConfirmSheet: View {
                 Text("完了すると、この健診の質問の扱いは変更できません。回答メモの編集と削除は、あとからでもできます。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-
-                if let message = outcomeMessage {
-                    Label(message, systemImage: "exclamationmark.triangle.fill")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.orange)
-                }
             }
             .padding(20)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 8) {
+                // 完了しなかった理由は、ボタンのすぐ上に出す。一覧をスクロールしなくても見えるようにするため。
+                if let message = outcomeMessage {
+                    Label(message, systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 Button {
                     complete()
                 } label: {
@@ -69,10 +71,11 @@ struct CompletionConfirmSheet: View {
             .padding(.vertical, 12)
             .background(.bar)
         }
-        .confirmationDialog(
+        // 画面の中央に出し、後ろを暗くする。iOS 26 の confirmationDialog はボタンの近くに吹き出しで出て、
+        // 後ろの未保存のメモの枠と重なって読みにくく、「やめる」も表示されないため。
+        .alert(
             "保存されていない入力を破棄しますか？",
             isPresented: isShowingDiscardDialog,
-            titleVisibility: .visible,
             presenting: discardTarget
         ) { item in
             Button("破棄して保存済みのメモに戻す", role: .destructive) {
