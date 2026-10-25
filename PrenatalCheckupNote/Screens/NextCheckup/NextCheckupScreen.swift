@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
 /// 行を押すと質問のシートを開く。出産予定日があれば、いちばん上に今日の妊娠週数を出す（R-51）。
-/// カードのお知らせのスイッチは段階 C で足す。
+/// カードの 3 行目は、前日の夜のお知らせとスイッチ（段階 C）。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -216,6 +216,9 @@ private struct NextCheckupCard: View {
                     .buttonStyle(.borderless)
                     .fontWeight(.semibold)
                 }
+                if let input = store.reminderInput {
+                    ReminderRow(input: input)
+                }
             }
         } else {
             Section {
@@ -244,5 +247,92 @@ private struct NextCheckupCard: View {
 
     private var checkedItemCount: Int {
         store.bringItems.filter(\.isChecked).count
+    }
+}
+
+/// 次の健診のカードの、お知らせの行（要件定義 v0.4 の 4 章・5.4）。触れる見本と同じく、ベルの印と状態の文とスイッチ。
+private struct ReminderRow: View {
+    @Environment(NoteStore.self) private var store
+    let input: ReminderInput
+
+    @State private var isShowingPermissionAlert = false
+
+    var body: some View {
+        let status = ReminderStatus.make(input: input, authorization: authorization, now: .now)
+        HStack(spacing: 8) {
+            Image(systemName: "bell")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(status.text)
+                    .font(.subheadline)
+                // 予約に失敗したら隠さずに知らせる（R-45）。次に開いたとき・前面に戻ったときに、もう一度予約する（S-06）。
+                if isScheduleFailureShown(status) {
+                    Text("お知らせを予約できませんでした。アプリを開き直すと、もう一度予約します。")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Toggle(
+                "前日の夜にお知らせ",
+                isOn: Binding {
+                    status.showsSwitchOn
+                } set: { isOn in
+                    setReminder(isOn)
+                }
+            )
+            .labelsHidden()
+            .disabled(!status.canToggle)
+        }
+        .notificationPermissionAlert(isPresented: $isShowingPermissionAlert)
+    }
+
+    private var authorization: ReminderAuthorization {
+        store.reminders?.authorization ?? .notDetermined
+    }
+
+    private func isScheduleFailureShown(_ status: ReminderStatus) -> Bool {
+        guard store.reminders?.lastScheduleFailed == true, case .on = status else {
+            return false
+        }
+        return true
+    }
+
+    /// スイッチを切り替える。オンにするときは、通知の許可を確かめる（R-44）。
+    private func setReminder(_ isOn: Bool) {
+        guard let next = store.nextCheckup else {
+            return
+        }
+        let hour = next.hour
+        let minute = next.minute
+        let input = input
+        Task {
+            var slot = input.slot
+            if isOn {
+                guard await ensureReminderPermission(store.reminders) else {
+                    isShowingPermissionAlert = true
+                    return
+                }
+                // 選んでいた時刻が過ぎていたら、選べるいちばん早い時刻にする。カードの文に新しい時刻が出る。
+                switch ReminderTimeRule.adjust(slot, for: input.checkupDay, now: .now) {
+                case .unchanged:
+                    break
+                case .moved(_, let to):
+                    slot = to
+                case .unavailable:
+                    return
+                }
+            }
+            store.perform {
+                try $0.setNextCheckup(
+                    day: input.checkupDay,
+                    hour: hour,
+                    minute: minute,
+                    isReminderOn: isOn,
+                    reminderSlot: slot
+                )
+            }
+        }
     }
 }

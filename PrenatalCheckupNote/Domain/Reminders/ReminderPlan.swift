@@ -32,6 +32,14 @@ nonisolated enum ReminderPlan {
     /// このアプリの、次の健診のお知らせの名前の頭。ほかのお知らせと区別する。
     static let identifierPrefix = "next-checkup-reminder-"
 
+    /// 開発用の「1 分後に試しのお知らせ」の名前。頭を `identifierPrefix` と違えておき、突き合わせで取り消されないようにする。
+    static let testIdentifier = "next-checkup-test-reminder"
+
+    /// 押されたら「次の健診」を開くお知らせか（R-46）。試しのお知らせも、本物と同じに扱う。
+    static func opensNextCheckup(identifier: String) -> Bool {
+        identifier.hasPrefix(identifierPrefix) || identifier == testIdentifier
+    }
+
     /// 届く文（R-43）。ロック画面にも出るので、質問の中身や健康のことは書かない。
     static let body = "明日は健診の日です。聞きたいことを確かめておきましょう"
 
