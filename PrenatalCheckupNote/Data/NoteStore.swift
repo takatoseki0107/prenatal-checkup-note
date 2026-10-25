@@ -17,8 +17,12 @@ final class NoteStore {
     private(set) var nextCheckup: NextCheckup?
     /// 持ち物の品目（R-34）。
     private(set) var bringItems: [BringItem] = []
-    /// 出産予定日。入れていなければ `nil`（B6 で入れられるようにする）。
+    /// 出産予定日。入れていなければ `nil`。
     private(set) var dueDate: CalendarDay?
+    /// 「妊娠週数を表示する」（R-53）。
+    private(set) var showsGestationalAge = true
+    /// 「はじめに」を出すか。初めて開いたときだけ出す。
+    private(set) var needsOnboarding = false
     /// 「元に戻す」を出すかどうか。窓口の値を写したもの。
     private(set) var pendingUndo: PendingUndo?
     /// 画面に出すエラーの文。出し終えたら画面が `nil` に戻す。
@@ -69,7 +73,10 @@ final class NoteStore {
             questionDraft = try service.questionDraft()
             nextCheckup = try service.nextCheckup()
             bringItems = try service.bringItems()
-            dueDate = try service.profile()?.dueDateNumber.flatMap { CalendarDay(number: $0) }
+            let profile = try service.profile()
+            dueDate = profile?.dueDateNumber.flatMap { CalendarDay(number: $0) }
+            showsGestationalAge = profile?.showsGestationalAge ?? true
+            needsOnboarding = profile.map { !$0.hasFinishedOnboarding } ?? false
         } catch {
             errorMessage = "データを読み込めませんでした。"
         }
@@ -78,6 +85,11 @@ final class NoteStore {
             pendingUndo = latestUndo
             scheduleUndoExpiry()
         }
+    }
+
+    /// その日の妊娠週数の文（今日・次の健診・目安の日付に使う。R-51）。出さないときは `nil`。
+    func gestationalAgeText(on day: CalendarDay) -> String? {
+        GestationalAgeDisplay.text(on: day, dueDate: dueDate, isShown: showsGestationalAge)
     }
 
     /// 元に戻すの帯を、決まった時間のあとに消す（R-60）。

@@ -96,9 +96,14 @@ final class NoteService {
     // MARK: - 初めて使うとき
 
     /// 設定がなければ作り、初めの持ち物を入れる。2 回目以降は何もしない。
+    ///
+    /// 「はじめに」を作る前から使っていて、もう記録がある人には「はじめに」を出さない（終えたことにする）。
     func prepareInitialData(now: Date) throws {
         try perform {
-            guard try profile() == nil else {
+            if let profile = try profile() {
+                if !profile.hasFinishedOnboarding, try hasAnyRecord() {
+                    profile.hasFinishedOnboarding = true
+                }
                 return
             }
             context.insert(PregnancyProfile())
@@ -106,6 +111,15 @@ final class NoteService {
                 context.insert(BringItem(name: name, sortOrder: offset))
             }
         }
+    }
+
+    /// 質問・健診後メモ・次の健診・書きかけのどれかがあるか。
+    private func hasAnyRecord() throws -> Bool {
+        try !questions().isEmpty
+            || !memos().isEmpty
+            || nextCheckup() != nil
+            || memoDraft() != nil
+            || questionDraft() != nil
     }
 
     // MARK: - 聞きたいこと
@@ -384,6 +398,43 @@ final class NoteService {
 
     // MARK: - 設定
 
+    /// 「はじめに」を終える。出産予定日を入れたときだけ、それを残す（「あとで入れる」なら `nil`）。
+    func finishOnboarding(dueDate: CalendarDay?) throws {
+        try perform {
+            guard let profile = try profile() else {
+                throw NoteServiceError.notFound
+            }
+            if let dueDate {
+                profile.dueDateNumber = dueDate.number
+            }
+            profile.hasFinishedOnboarding = true
+        }
+    }
+
+    /// 設定を保存する。出産予定日と「妊娠週数を表示する」を 1 回の保存にまとめる（S-01）。
+    ///
+    /// 予定日を変えても、これまでの健診後メモの週数は、記録したときの予定日のまま（R-52）。
+    func updateSettings(dueDate: CalendarDay?, showsGestationalAge: Bool) throws {
+        try perform {
+            guard let profile = try profile() else {
+                throw NoteServiceError.notFound
+            }
+            profile.dueDateNumber = dueDate?.number
+            profile.showsGestationalAge = showsGestationalAge
+        }
+    }
+
+    /// 出産予定日を消す。元に戻せる。
+    func clearDueDate() throws {
+        guard let profile = try profile(), let number = profile.dueDateNumber else {
+            return
+        }
+        try perform {
+            profile.dueDateNumber = nil
+        }
+        pendingUndo = .clearedDueDate(number)
+    }
+
     func setDueDate(_ dueDate: CalendarDay?) throws {
         try perform {
             guard let profile = try profile() else {
@@ -456,6 +507,12 @@ final class NoteService {
                         item.answer = before.answer
                     }
                 }
+
+            case .clearedDueDate(let number):
+                guard let profile = try profile() else {
+                    throw NoteServiceError.notFound
+                }
+                profile.dueDateNumber = number
 
             case .deletedMemo(let snapshot):
                 // 消したメモを、同じ ID のまま作り直す。質問と答えも戻す。

@@ -44,7 +44,15 @@ struct NextCheckupSheet: View {
                 } header: {
                     Text(NextCheckupSuggestion.baseLabel(lastVisit: lastVisit, today: today))
                 } footer: {
-                    Text((suggestion?.reasonText ?? "") + "実際の日付は病院で決まるので、決まった日に直してください。")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text((suggestion?.reasonText ?? "") + "実際の日付は病院で決まるので、決まった日に直してください。")
+                        // 選んでいる日の妊娠週数（R-51）。
+                        if let ageText = store.gestationalAgeText(on: selectedDay) {
+                            Text("この日は\(ageText)です")
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
                 }
 
                 if store.nextCheckup != nil {

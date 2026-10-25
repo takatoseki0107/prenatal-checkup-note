@@ -3,13 +3,27 @@ import SwiftUI
 /// タブ 1「次の健診」（要件定義 v0.4 の 4 章）。
 ///
 /// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
-/// 行を押すと質問のシートを開く。上の帯の妊娠週数は B6、カードのお知らせのスイッチは段階 C で足す。
+/// 行を押すと質問のシートを開く。出産予定日があれば、いちばん上に今日の妊娠週数を出す（R-51）。
+/// カードのお知らせのスイッチは段階 C で足す。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
 
     var body: some View {
         List {
+            if let todayAgeText = store.gestationalAgeText(on: CalendarDay(.now)) {
+                Section {
+                    Text("今日　\(todayAgeText)")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(.background))
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
+                }
+            }
+
             NextCheckupCard()
 
             Section {
@@ -177,9 +191,16 @@ private struct NextCheckupCard: View {
         if let next = store.nextCheckup, let day = next.day {
             Section {
                 HStack(spacing: 8) {
-                    Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
+                            .font(.headline)
+                        if let ageText = store.gestationalAgeText(on: day) {
+                            Text("\(ageText)の健診")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     Button("変更") {
                         router.sheet = .nextCheckup
                     }

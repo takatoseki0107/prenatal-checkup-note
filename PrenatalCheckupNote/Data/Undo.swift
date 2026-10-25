@@ -73,6 +73,8 @@ nonisolated enum PendingUndo: Equatable, Sendable {
     case editedMemo(CheckupMemoSnapshot)
     /// 健診後メモを削除した（R-19）。帯が出ている間だけ戻せる。
     case deletedMemo(CheckupMemoSnapshot)
+    /// 出産予定日を消した。消す前の予定日（`CalendarDay.number`）を持つ。
+    case clearedDueDate(Int)
 }
 
 nonisolated struct SavedMemoUndo: Equatable, Sendable {
