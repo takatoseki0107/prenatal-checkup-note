@@ -27,6 +27,13 @@ nonisolated struct MemoInput: Equatable, Sendable {
     let nextCheckupIDAtStart: UUID?
 }
 
+/// 過去の健診後メモを直すときの、「この健診で聞いたこと」の 1 件。
+nonisolated struct MemoItemEdit: Equatable, Sendable {
+    let id: UUID
+    let questionText: String
+    let answer: String
+}
+
 /// 健診後メモを保存した結果。
 nonisolated struct MemoSaveResult: Equatable, Sendable {
     let memoID: UUID
@@ -255,6 +262,56 @@ final class NoteService {
         try context.fetch(FetchDescriptor<CheckupMemo>(predicate: #Predicate<CheckupMemo> { memo in memo.id == id })).first
     }
 
+    /// 過去の健診後メモを直す（R-18）。元に戻せる。
+    ///
+    /// 直せるのは、受診日・本文・各質問の文と答え。質問を足したり外したりはしない。
+    /// 直しても、いま丸を付けている質問は取り込まない。記録したときの出産予定日もそのまま（週数は記録時の予定日で出す）。
+    func updateMemo(id: UUID, visitDay: CalendarDay, body: String, items: [MemoItemEdit], now: Date) throws {
+        guard let memo = try memo(id: id) else {
+            throw NoteServiceError.notFound
+        }
+        // 質問の文は必須。空白だけも空とみなす。
+        var normalizedItems: [UUID: (text: String, answer: String)] = [:]
+        for item in items {
+            guard let text = InputText.normalized(item.questionText) else {
+                throw NoteServiceError.emptyText
+            }
+            normalizedItems[item.id] = (text, InputText.normalized(item.answer) ?? "")
+        }
+        let normalizedBody = InputText.normalized(body) ?? ""
+        // 本文も質問もないメモにはしない（R-12）。
+        guard !normalizedBody.isEmpty || !memo.items.isEmpty else {
+            throw NoteServiceError.emptyMemo
+        }
+
+        let snapshot = memo.snapshot
+        try perform {
+            memo.visitDayNumber = visitDay.number
+            memo.body = normalizedBody
+            memo.updatedAt = now
+            for item in memo.items {
+                if let edited = normalizedItems[item.id] {
+                    item.questionText = edited.text
+                    item.answer = edited.answer
+                }
+            }
+        }
+        pendingUndo = .editedMemo(snapshot)
+    }
+
+    /// 健診後メモを削除する（R-19。確認は画面で行う）。メモの中の質問と答えも一緒に消える。
+    /// 元に戻せるのは、元に戻すの帯が出ている間だけ。
+    func deleteMemo(id: UUID) throws {
+        guard let memo = try memo(id: id) else {
+            throw NoteServiceError.notFound
+        }
+        let snapshot = memo.snapshot
+        try perform {
+            context.delete(memo)
+        }
+        pendingUndo = .deletedMemo(snapshot)
+    }
+
     // MARK: - 次の健診と持ち物
 
     /// 次の健診を入れる・直す。すでにあれば、その予定を直す（ID は変えない）。
@@ -383,6 +440,45 @@ final class NoteService {
 
             case .removedBringItem(let snapshot):
                 context.insert(BringItem(id: snapshot.id, name: snapshot.name, isChecked: snapshot.isChecked, sortOrder: snapshot.sortOrder))
+
+            case .editedMemo(let snapshot):
+                // 直したメモを、直す前の値に戻す（同じメモ・同じ質問のまま、中身だけ戻す）。
+                guard let memo = try memo(id: snapshot.id) else {
+                    throw NoteServiceError.notFound
+                }
+                memo.visitDayNumber = snapshot.visitDayNumber
+                memo.body = snapshot.body
+                memo.updatedAt = snapshot.updatedAt
+                let itemsByID = Dictionary(uniqueKeysWithValues: snapshot.items.map { ($0.id, $0) })
+                for item in memo.items {
+                    if let before = itemsByID[item.id] {
+                        item.questionText = before.questionText
+                        item.answer = before.answer
+                    }
+                }
+
+            case .deletedMemo(let snapshot):
+                // 消したメモを、同じ ID のまま作り直す。質問と答えも戻す。
+                let memo = CheckupMemo(
+                    id: snapshot.id,
+                    visitDayNumber: snapshot.visitDayNumber,
+                    body: snapshot.body,
+                    dueDateNumberAtVisit: snapshot.dueDateNumberAtVisit,
+                    createdAt: snapshot.createdAt
+                )
+                memo.updatedAt = snapshot.updatedAt
+                context.insert(memo)
+                for itemSnapshot in snapshot.items {
+                    let item = MemoItem(
+                        id: itemSnapshot.id,
+                        questionText: itemSnapshot.questionText,
+                        answer: itemSnapshot.answer,
+                        note: itemSnapshot.note,
+                        sortOrder: itemSnapshot.sortOrder
+                    )
+                    context.insert(item)
+                    item.memo = memo
+                }
             }
         }
         return undo

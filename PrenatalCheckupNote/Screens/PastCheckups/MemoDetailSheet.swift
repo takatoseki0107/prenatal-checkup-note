@@ -1,0 +1,258 @@
+import SwiftUI
+
+/// 過去の健診後メモを見る・直す・削除するシート（要件定義 v0.4 の 4 章「健診後メモを見る / 直す」、R-18、R-19）。
+///
+/// 開くと「見る」。右上の「編集」で「健診後メモを直す」に変わる。直すのは「保存」ボタン式で、書きかけは残さない（R-72）。
+/// 直したら・削除したら、元に戻すの帯で戻せる。
+struct MemoDetailSheet: View {
+    let memoID: UUID
+
+    @Environment(NoteStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isEditing = false
+    @State private var visitDate = Date.now
+    @State private var memoBody = ""
+    @State private var items: [EditableItem] = []
+    /// 削除して閉じる途中か。閉じる間に「見つかりませんでした」を出さないため。
+    @State private var isClosing = false
+    @State private var isConfirmingCancel = false
+    @State private var isConfirmingDelete = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let memo {
+                    if isEditing {
+                        editForm
+                    } else {
+                        MemoView(memo: memo)
+                    }
+                } else if !isClosing {
+                    ContentUnavailableView(
+                        "このメモは見つかりませんでした",
+                        systemImage: "doc.questionmark",
+                        description: Text("削除された可能性があります。")
+                    )
+                }
+            }
+            .navigationTitle(isEditing ? "健診後メモを直す" : title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if isEditing {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("キャンセル") {
+                            if hasChanges {
+                                isConfirmingCancel = true
+                            } else {
+                                isEditing = false
+                            }
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("保存") {
+                            save()
+                        }
+                        .disabled(!canSave || !hasChanges)
+                    }
+                } else {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("閉じる") {
+                            dismiss()
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("編集") {
+                            startEditing()
+                        }
+                        .disabled(memo == nil)
+                    }
+                }
+            }
+            // 直したあとの元に戻すの帯は、シートの上にも出す（後ろの画面の帯はシートに隠れるため）。
+            .safeAreaInset(edge: .bottom) {
+                if !isEditing, store.pendingUndo != nil {
+                    UndoBar()
+                        .background(.bar)
+                }
+            }
+            .animation(.default, value: store.pendingUndo)
+            .alert("変更を破棄しますか？", isPresented: $isConfirmingCancel) {
+                Button("編集を続ける", role: .cancel) {}
+                Button("破棄", role: .destructive) {
+                    isEditing = false
+                }
+            } message: {
+                Text("保存していない変更は消えます。")
+            }
+            // 削除の前に、消えるものを示して確かめる。「やめる」を主ボタンにする（R-19）。
+            .alert("このメモを削除しますか？", isPresented: $isConfirmingDelete) {
+                Button("やめる", role: .cancel) {}
+                Button("削除する", role: .destructive) {
+                    delete()
+                }
+            } message: {
+                Text(deleteMessage)
+            }
+        }
+        // 直していて保存していない変更があるときは、下にスワイプしても閉じない。
+        .interactiveDismissDisabled(isEditing && hasChanges)
+        // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
+        .noteErrorAlert(store)
+    }
+
+    // MARK: - 直す画面
+
+    private var editForm: some View {
+        Form {
+            Section {
+                DatePicker("受診日", selection: $visitDate, displayedComponents: .date)
+                    // 日付はグレゴリオ暦・日本時間で決める（R-90）。
+                    .environment(\.calendar, .japan)
+                    .environment(\.timeZone, Calendar.japan.timeZone)
+            }
+            Section("先生から聞いたこと・次までにすること") {
+                TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
+                    .lineLimit(4...)
+            }
+            if !items.isEmpty {
+                Section("この健診で聞いたこと") {
+                    ForEach($items) { $item in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("質問\(item.number)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextField("質問", text: $item.questionText, axis: .vertical)
+                            Text("先生の答え（任意）")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            TextField("先生の答え", text: $item.answer, axis: .vertical)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            Section {
+                Button("このメモを削除する", role: .destructive) {
+                    isConfirmingDelete = true
+                }
+            } footer: {
+                Text("過去のメモを直しても、いま「聞きたいこと」で丸を付けている質問は、このメモに入りません。")
+            }
+        }
+    }
+
+    // MARK: - 値
+
+    private var memo: CheckupMemo? {
+        store.memos.first { $0.id == memoID }
+    }
+
+    private var title: String {
+        "\(memo?.visitDay?.displayText ?? "")の健診"
+    }
+
+    private var deleteMessage: String {
+        let date = memo?.visitDay?.displayText ?? ""
+        let count = memo?.items.count ?? 0
+        return "\(date)の健診後メモを削除します。先生の話のメモと、この健診で聞いたこと（\(count)件）と答えが、すべて消えます。"
+    }
+
+    /// 保存できるか。質問の文は必須（空白だけも空）。本文も質問もないメモにはしない（R-12）。
+    private var canSave: Bool {
+        items.allSatisfy { InputText.normalized($0.questionText) != nil }
+            && MemoSheetRules.canSave(body: memoBody, includedQuestionCount: items.count)
+    }
+
+    /// 保存されているメモと、画面の内容が違うか。
+    private var hasChanges: Bool {
+        guard isEditing, let memo else {
+            return false
+        }
+        if CalendarDay(visitDate) != memo.visitDay || memoBody != memo.body {
+            return true
+        }
+        let saved = Dictionary(uniqueKeysWithValues: memo.items.map { ($0.id, ($0.questionText, $0.answer)) })
+        return items.contains { item in
+            guard let before = saved[item.id] else {
+                return true
+            }
+            return before.0 != item.questionText || before.1 != item.answer
+        }
+    }
+
+    // MARK: - 操作
+
+    private func startEditing() {
+        guard let memo else {
+            return
+        }
+        visitDate = (memo.visitDay ?? CalendarDay(.now)).date(hour: 12)
+        memoBody = memo.body
+        items = memo.sortedItems.enumerated().map { offset, item in
+            EditableItem(id: item.id, number: offset + 1, questionText: item.questionText, answer: item.answer)
+        }
+        isEditing = true
+    }
+
+    private func save() {
+        let day = CalendarDay(visitDate)
+        let body = memoBody
+        let edits = items.map { MemoItemEdit(id: $0.id, questionText: $0.questionText, answer: $0.answer) }
+        let result: Void? = store.perform {
+            try $0.updateMemo(id: memoID, visitDay: day, body: body, items: edits, now: .now)
+        }
+        if result != nil {
+            // 直したら「見る」に戻る。帯の「元に戻す」で、直す前に戻せる（R-18）。
+            isEditing = false
+        }
+    }
+
+    private func delete() {
+        let result: Void? = store.perform { try $0.deleteMemo(id: memoID) }
+        if result != nil {
+            // 閉じたあと、「これまでの健診」の画面の帯の「元に戻す」で戻せる（R-19）。
+            isClosing = true
+            dismiss()
+        }
+    }
+}
+
+/// 健診後メモを見る画面（R-18 の「見る」）。
+private struct MemoView: View {
+    let memo: CheckupMemo
+
+    var body: some View {
+        List {
+            if !memo.body.isEmpty {
+                Section("先生から聞いたこと・次までにすること") {
+                    Text(memo.body)
+                        .textSelection(.enabled)
+                }
+            }
+            if !memo.items.isEmpty {
+                Section("この健診で聞いたこと") {
+                    ForEach(memo.sortedItems) { item in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(item.questionText)
+                                .font(.headline)
+                            Text(item.answer.isEmpty ? "答えのメモなし" : "先生の答え：\(item.answer)")
+                                .font(.subheadline)
+                                .foregroundStyle(item.answer.isEmpty ? .secondary : .primary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// 直す画面の「この健診で聞いたこと」の 1 件。
+private struct EditableItem: Identifiable {
+    let id: UUID
+    /// 画面に出す番号（質問 1、質問 2…）。
+    let number: Int
+    var questionText: String
+    var answer: String
+}

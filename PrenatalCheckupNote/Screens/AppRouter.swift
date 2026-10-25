@@ -28,6 +28,8 @@ final class AppRouter {
         case nextCheckup
         /// 持ち物を見る・チェックする・足す・外す。
         case bringItems
+        /// 過去の健診後メモを見る・直す・削除する。
+        case memo(UUID)
         /// 設定。
         case settings
 
