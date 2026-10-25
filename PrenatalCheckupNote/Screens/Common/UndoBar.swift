@@ -5,6 +5,7 @@ import SwiftUI
 /// 戻せる操作がないときは何も出さない。時間で消すのは `NoteStore` が受け持つ。
 struct UndoBar: View {
     @Environment(NoteStore.self) private var store
+    @Environment(AppRouter.self) private var router
 
     var body: some View {
         if let undo = store.pendingUndo {
@@ -14,9 +15,11 @@ struct UndoBar: View {
                 Spacer()
                 // iOS 26 では、帯の上の `.bordered` のボタンは背景がほとんど見えないので、塗りのあるボタンにする。
                 Button("元に戻す") {
-                    // 健診後メモの保存を戻したときに、書いた内容のままメモの画面を開き直す（R-17）のは、
-                    // 健診後メモのシートを作る B3 で足す。
-                    store.perform { try $0.undo() }
+                    let undone = store.perform { try $0.undo() }
+                    // 健診後メモの保存を戻したら、書いた内容のままメモのシートを開き直す（R-17）。
+                    if case .savedMemo? = undone {
+                        router.sheet = .writeMemo
+                    }
                 }
                 .buttonStyle(.borderedProminent)
             }

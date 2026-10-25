@@ -13,6 +13,8 @@ final class NoteStore {
     private(set) var memoDraft: MemoDraft?
     /// 書きかけの新しい質問（R-72）。
     private(set) var questionDraft: QuestionDraft?
+    /// 次の健診。日付が入っていなければ `nil`。
+    private(set) var nextCheckup: NextCheckup?
     /// 「元に戻す」を出すかどうか。窓口の値を写したもの。
     private(set) var pendingUndo: PendingUndo?
     /// 画面に出すエラーの文。出し終えたら画面が `nil` に戻す。
@@ -34,16 +36,22 @@ final class NoteStore {
     }
 
     /// 窓口の操作を 1 つ呼ぶ。失敗したらエラーの文を出し、`nil` を返す。
+    ///
+    /// - Parameter saveFailureMessage: 保存に失敗したときの文を、場面に合わせて変えたいときに渡す。
+    ///   例：書き始めるだけで、まだ何も入力していないときに「入力した内容はそのままです」と出さないため。
     @discardableResult
-    func perform<Value>(_ operation: (NoteService) throws -> Value) -> Value? {
+    func perform<Value>(saveFailureMessage: String? = nil, _ operation: (NoteService) throws -> Value) -> Value? {
         defer { reload() }
         do {
             return try operation(service)
+        } catch NoteServiceError.saveFailed {
+            errorMessage = saveFailureMessage ?? NoteServiceError.saveFailed.message
+            return nil
         } catch let error as NoteServiceError {
             errorMessage = error.message
             return nil
         } catch {
-            errorMessage = NoteServiceError.saveFailed.message
+            errorMessage = saveFailureMessage ?? NoteServiceError.saveFailed.message
             return nil
         }
     }
@@ -55,6 +63,7 @@ final class NoteStore {
             memos = try service.memos()
             memoDraft = try service.memoDraft()
             questionDraft = try service.questionDraft()
+            nextCheckup = try service.nextCheckup()
         } catch {
             errorMessage = "データを読み込めませんでした。"
         }

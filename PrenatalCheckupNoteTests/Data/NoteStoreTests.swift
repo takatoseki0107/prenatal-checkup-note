@@ -54,6 +54,28 @@ struct NoteStoreTests {
         #expect(noteStore.errorMessage == nil)
     }
 
+    @Test func showsTheMessageForTheSceneWhenASaveFails() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        let noteStore = NoteStore(container: store.container, service: service, undoDisplayDuration: .seconds(60))
+        store.failures.shouldFail = true
+
+        // 書き始めるだけで、まだ何も入力していない場面では「入力した内容はそのままです」と出さない。
+        let started = noteStore.perform(saveFailureMessage: "健診後メモを書き始められませんでした。もう一度試してください。") {
+            try $0.startMemoDraft(today: TestDates.day(2026, 11, 5), now: now)
+        }
+        #expect(started == nil)
+        #expect(noteStore.errorMessage == "健診後メモを書き始められませんでした。もう一度試してください。")
+
+        // 文を渡さなければ、いつもの文になる。保存の失敗ではないエラーは、そのエラーの文のまま。
+        noteStore.errorMessage = nil
+        noteStore.perform { try $0.addQuestion(text: "むくみ", now: now) }
+        #expect(noteStore.errorMessage == NoteServiceError.saveFailed.message)
+        noteStore.errorMessage = nil
+        noteStore.perform(saveFailureMessage: "使われない文") { try $0.addQuestion(text: "  ", now: now) }
+        #expect(noteStore.errorMessage == NoteServiceError.emptyText.message)
+    }
+
     @Test func failedSaveKeepsTheUndoBar() throws {
         let store = try TemporaryStore()
         let service = store.makeService()
