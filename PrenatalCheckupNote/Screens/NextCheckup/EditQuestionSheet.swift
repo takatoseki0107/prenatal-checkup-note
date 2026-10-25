@@ -51,9 +51,9 @@ struct EditQuestionSheet: View {
                 }
             }
             .onAppear(perform: load)
-            .alert("直した内容を捨てますか？", isPresented: $isConfirmingCancel) {
-                Button("直すのを続ける", role: .cancel) {}
-                Button("捨てる", role: .destructive) {
+            .alert("変更を破棄しますか？", isPresented: $isConfirmingCancel) {
+                Button("編集を続ける", role: .cancel) {}
+                Button("破棄", role: .destructive) {
                     dismiss()
                 }
             } message: {

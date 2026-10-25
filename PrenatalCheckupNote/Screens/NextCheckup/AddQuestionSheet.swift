@@ -3,7 +3,7 @@ import SwiftUI
 /// 質問を追加するシート（要件定義 v0.4 の 4 章「質問を追加 / 質問」）。
 ///
 /// 書いている途中の質問は、書きかけとして残す（R-72）。入力が 1 秒ほど止まったら保存し、
-/// 「閉じる」でも保存を試す。次に開くと続きから書ける。捨てるのは「書きかけを捨てる」を押して確認したときだけ（R-71 と同じ）。
+/// 「閉じる」でも保存を試す。次に開くと続きから書ける。破棄するのは「入力途中の内容を破棄」を押して確認したときだけ（R-71 と同じ）。
 struct AddQuestionSheet: View {
     @Environment(NoteStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -12,7 +12,7 @@ struct AddQuestionSheet: View {
     @State private var note = ""
     /// 書きかけを読み込んだか。読み込む前の空の文で、書きかけを上書きしないため。
     @State private var hasLoaded = false
-    /// 追加した・捨てたあとか。閉じる途中に、待っていた保存が書きかけを作り直さないため。
+    /// 追加した・破棄したあとか。閉じる途中に、待っていた保存が書きかけを作り直さないため。
     @State private var isFinished = false
     @State private var isConfirmingDiscard = false
     @FocusState private var isTextFocused: Bool
@@ -29,7 +29,7 @@ struct AddQuestionSheet: View {
                 }
                 if store.questionDraft != nil || !isEmpty {
                     Section {
-                        Button("書きかけを捨てる", role: .destructive) {
+                        Button("入力途中の内容を破棄", role: .destructive) {
                             isConfirmingDiscard = true
                         }
                     }
@@ -66,9 +66,9 @@ struct AddQuestionSheet: View {
                 }
                 saveDraft()
             }
-            .alert("書きかけを捨てますか？", isPresented: $isConfirmingDiscard) {
-                Button("やめる", role: .cancel) {}
-                Button("捨てる", role: .destructive) {
+            .alert("入力途中の内容を破棄しますか？", isPresented: $isConfirmingDiscard) {
+                Button("編集を続ける", role: .cancel) {}
+                Button("破棄", role: .destructive) {
                     discardDraft()
                 }
             } message: {
