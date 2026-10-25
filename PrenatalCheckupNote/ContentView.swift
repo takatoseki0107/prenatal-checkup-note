@@ -49,6 +49,8 @@ struct ContentView: View {
                 MemoDetailSheet(memoID: memoID)
             case .settings:
                 SettingsView()
+            case .shareQuestions:
+                ShareQuestionsSheet()
             }
         }
         // 初めて開いたときだけ「はじめに」を出す。終えると `needsOnboarding` が false になり、閉じる。

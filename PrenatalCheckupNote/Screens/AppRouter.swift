@@ -32,6 +32,8 @@ final class AppRouter {
         case memo(UUID)
         /// 設定。
         case settings
+        /// 「次の健診」の聞きたいことの一覧を、文章で共有する（段階 D）。
+        case shareQuestions
 
         var id: Self { self }
     }
