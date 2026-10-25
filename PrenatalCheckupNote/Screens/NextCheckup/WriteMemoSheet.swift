@@ -26,6 +26,8 @@ struct WriteMemoSheet: View {
                 Section("先生から聞いたこと・次までにすること（任意）") {
                     TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
                         .lineLimit(4...)
+                        // 画面のテストで、この欄を見つけるための名前。
+                        .accessibilityIdentifier("memoBodyField")
                 }
                 askedQuestionsSection
                 Section {

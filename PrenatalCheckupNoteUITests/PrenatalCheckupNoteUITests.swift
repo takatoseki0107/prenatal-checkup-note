@@ -7,8 +7,9 @@
 
 import XCTest
 
-/// アプリが起動して前面に表示されることだけを確かめる、最小のUIテスト。
-/// 画面ごとのUIテストは、段階1以降で画面を作るときに追加する。
+/// アプリが起動して前面に表示されることだけを確かめる、最小の画面のテスト。
+///
+/// 本当のデータに触れないよう、画面のテスト用の保存場所を空にして起動する。
 final class PrenatalCheckupNoteUITests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -18,6 +19,7 @@ final class PrenatalCheckupNoteUITests: XCTestCase {
     @MainActor
     func testAppLaunches() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["-ui-testing", "-ui-testing-reset"]
         app.launch()
 
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))

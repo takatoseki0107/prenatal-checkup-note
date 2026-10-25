@@ -37,4 +37,16 @@ enum AppDataStore {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return try makeContainer(url: directory.appending(path: "PrenatalCheckupNote.store"))
     }
+
+    /// 画面のテスト（XCUITest）で使う保存場所。本当のデータとは別のフォルダーに置く。
+    ///
+    /// - Parameter resettingData: `true` なら、開く前にフォルダーごと消して、空から始める。
+    static func makeUITestingContainer(resettingData: Bool) throws -> ModelContainer {
+        let directory = URL.applicationSupportDirectory.appending(path: "UITesting", directoryHint: .isDirectory)
+        if resettingData, FileManager.default.fileExists(atPath: directory.path(percentEncoded: false)) {
+            try FileManager.default.removeItem(at: directory)
+        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return try makeContainer(url: directory.appending(path: "PrenatalCheckupNote.store"))
+    }
 }
