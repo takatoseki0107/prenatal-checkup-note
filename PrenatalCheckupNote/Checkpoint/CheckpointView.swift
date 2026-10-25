@@ -87,9 +87,13 @@ struct CheckpointView: View {
         .background(.bar)
     }
 
+    /// この画面で失敗の知らせを出すかどうか。
+    ///
+    /// メモの画面（シート）を開いている間は、この画面の上に知らせを出せない（シートの後ろに隠れて、出ないまま終わる）。
+    /// そのため、シートを開いている間はシートの側で出し、ここでは出さない。
     private var isShowingError: Binding<Bool> {
         Binding {
-            store.errorMessage != nil
+            store.errorMessage != nil && !isWritingMemo
         } set: { isShowing in
             if !isShowing {
                 store.errorMessage = nil
@@ -182,6 +186,9 @@ private struct MemoCheckSheet: View {
     @State private var memoText = ""
     @State private var excludedQuestionIDs: Set<UUID> = []
     @State private var isConfirmingDiscard = false
+    /// 画面の文が、まだ書きかけとして保存できていないかどうか。
+    /// 保存に失敗している間は、閉じると書いた分が消えるので、閉じさせない。
+    @State private var hasUnsavedText = false
 
     var body: some View {
         NavigationStack {
@@ -215,8 +222,10 @@ private struct MemoCheckSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("閉じる") {
-                        saveDraft()
-                        dismiss()
+                        // 書きかけを保存できたときだけ閉じる。失敗したら知らせを出し、画面は開いたままにする。
+                        if saveDraft() {
+                            dismiss()
+                        }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -236,6 +245,24 @@ private struct MemoCheckSheet: View {
                 }
             } message: {
                 Text("書いた文は消えます。丸を付けた質問は一覧に残ります。")
+            }
+        }
+        // 保存できていない文があるときは、下にスワイプしても閉じないようにする。
+        .interactiveDismissDisabled(hasUnsavedText)
+        // シートの上で起きた失敗は、シートの上で知らせる（後ろの画面の知らせは、シートに隠れて出ないため）。
+        .alert("うまくいきませんでした", isPresented: isShowingError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.errorMessage ?? "")
+        }
+    }
+
+    private var isShowingError: Binding<Bool> {
+        Binding {
+            store.errorMessage != nil
+        } set: { isShowing in
+            if !isShowing {
+                store.errorMessage = nil
             }
         }
     }
@@ -262,20 +289,35 @@ private struct MemoCheckSheet: View {
         excludedQuestionIDs = Set(draft.excludedQuestionIDs)
     }
 
-    private func saveDraft() {
+    /// 書きかけを保存する。保存できたら `true` を返す。
+    @discardableResult
+    private func saveDraft() -> Bool {
         let day = CalendarDay(visitDate)
         let text = memoText
         let excluded = excludedQuestionIDs
-        store.perform { try $0.updateMemoDraft(visitDay: day, body: text, excludedQuestionIDs: excluded, now: .now) }
+        // 保存されている書きかけと同じなら、保存し直さない（開いたときに読み込んだだけで保存しないため）。
+        if let draft = store.memoDraft,
+           draft.visitDay == day,
+           draft.body == text,
+           Set(draft.excludedQuestionIDs) == excluded {
+            hasUnsavedText = false
+            return true
+        }
+        let result: Void? = store.perform {
+            try $0.updateMemoDraft(visitDay: day, body: text, excludedQuestionIDs: excluded, now: .now)
+        }
+        let saved = result != nil
+        hasUnsavedText = !saved
+        return saved
     }
 
     private func saveMemo() {
-        let day = CalendarDay(visitDate)
-        let text = memoText
-        let excluded = excludedQuestionIDs
+        // 先に、画面の文を書きかけとして保存する。ここで失敗したら、メモの保存には進まない。
+        guard saveDraft() else {
+            return
+        }
         let result = store.perform { (service: NoteService) throws -> MemoSaveResult in
-            try service.updateMemoDraft(visitDay: day, body: text, excludedQuestionIDs: excluded, now: .now)
-            return try service.saveMemo(try service.memoInputFromDraft(), now: .now)
+            try service.saveMemo(try service.memoInputFromDraft(), now: .now)
         }
         if result != nil {
             dismiss()
