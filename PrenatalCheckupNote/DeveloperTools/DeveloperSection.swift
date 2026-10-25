@@ -11,13 +11,14 @@ struct DeveloperSection: View {
 
         Section {
             Toggle("保存を失敗させる", isOn: $settings.failsSaving)
+            Toggle("お知らせの予約を失敗させる", isOn: $settings.failsReminderScheduling)
             NavigationLink("実機での動作確認") {
                 DeviceCheckView()
             }
         } header: {
             Text("開発用")
         } footer: {
-            Text("「保存を失敗させる」をオンにすると、保存がすべて失敗します。失敗しても、入力した内容や保存済みのデータが消えないことを確かめるために使います。アプリを終了すると、オフに戻ります。")
+            Text("「保存を失敗させる」をオンにすると、保存がすべて失敗します。失敗しても、入力した内容や保存済みのデータが消えないことを確かめるために使います。「お知らせの予約を失敗させる」をオンにすると、お知らせの予約が失敗します。どちらも、アプリを終了するとオフに戻ります。")
         }
     }
 }

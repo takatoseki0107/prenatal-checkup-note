@@ -27,6 +27,8 @@ final class NoteStore {
     private(set) var pendingUndo: PendingUndo?
     /// 画面に出すエラーの文。出し終えたら画面が `nil` に戻す。
     var errorMessage: String?
+    /// 次の健診のお知らせを、データに合わせる係（段階 C）。操作のたびに合わせるよう頼む。
+    var reminders: ReminderSync?
 
     @ObservationIgnored private let service: NoteService
     /// 保存場所。窓口が使っている間、閉じないように持っておく。
@@ -49,7 +51,11 @@ final class NoteStore {
     ///   例：書き始めるだけで、まだ何も入力していないときに「入力した内容はそのままです」と出さないため。
     @discardableResult
     func perform<Value>(saveFailureMessage: String? = nil, _ operation: (NoteService) throws -> Value) -> Value? {
-        defer { reload() }
+        defer {
+            reload()
+            // データを先に保存し、そのあとでお知らせを合わせる（S-05）。保存に失敗したときはデータが変わっていないので、合わせても何も変わらない。
+            reminders?.requestSync()
+        }
         do {
             return try operation(service)
         } catch NoteServiceError.saveFailed {
@@ -85,6 +91,14 @@ final class NoteStore {
             pendingUndo = latestUndo
             scheduleUndoExpiry()
         }
+    }
+
+    /// お知らせを考えるのに要る、いまの「次の健診」の値。予定がなければ `nil`。
+    var reminderInput: ReminderInput? {
+        guard let next = nextCheckup, let day = next.day else {
+            return nil
+        }
+        return ReminderInput(checkupDay: day, slot: next.reminderSlot, isOn: next.isReminderOn)
     }
 
     /// その日の妊娠週数の文（今日・次の健診・目安の日付に使う。R-51）。出さないときは `nil`。

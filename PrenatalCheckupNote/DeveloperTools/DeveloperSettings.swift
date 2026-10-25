@@ -10,5 +10,8 @@ final class DeveloperSettings {
 
     /// オンにすると、保存がすべて失敗する（S-08）。失敗しても何も消えないことを確かめるため。アプリを終了すると、オフに戻る。
     var failsSaving = false
+
+    /// オンにすると、お知らせの予約がすべて失敗する（S-08）。カードに失敗が出ることを確かめるため。アプリを終了すると、オフに戻る。
+    var failsReminderScheduling = false
 }
 #endif

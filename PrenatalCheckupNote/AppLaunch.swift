@@ -12,7 +12,14 @@ enum AppLaunch {
             let container = try options.makeContainer()
             let service = NoteService(context: ModelContext(container), persist: savesData)
             try service.prepareInitialData(now: now)
-            return .ready(NoteStore(container: container, service: service, undoDisplayDuration: options.undoDisplayDuration))
+            let store = NoteStore(container: container, service: service, undoDisplayDuration: options.undoDisplayDuration)
+            // お知らせは、いまの「次の健診」に合わせる（S-06）。アプリを開いたときにも一度合わせる。
+            let reminders = ReminderSync(center: SystemReminderCenter(), currentInput: { [weak store] in
+                store?.reminderInput
+            })
+            store.reminders = reminders
+            reminders.requestSync()
+            return .ready(store)
         } catch {
             return .failed("データの保存場所を開けませんでした。アプリを終了して、開き直してください。")
         }
