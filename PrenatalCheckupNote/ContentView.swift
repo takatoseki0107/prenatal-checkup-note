@@ -35,6 +35,8 @@ struct ContentView: View {
             switch sheet {
             case .addQuestion:
                 AddQuestionSheet()
+            case .editQuestion(let questionID):
+                EditQuestionSheet(questionID: questionID)
             case .settings:
                 SettingsView()
             }

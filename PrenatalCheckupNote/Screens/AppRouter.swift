@@ -1,3 +1,4 @@
+import Foundation
 import Observation
 
 /// いま開いているタブとシートを、1 か所で持つ。
@@ -17,8 +18,10 @@ final class AppRouter {
 
     /// 開くシート。
     nonisolated enum Sheet: Hashable, Identifiable {
-        /// 質問を追加する。
+        /// 質問を追加する。書きかけがあれば続きから（R-72）。
         case addQuestion
+        /// すでにある質問を見る・直す・削除する。
+        case editQuestion(UUID)
         /// 設定。
         case settings
 

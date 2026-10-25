@@ -261,4 +261,52 @@ struct UndoAndDraftTests {
         #expect(try current.questionDraft() == nil)
         #expect(try current.questions().map(\.text) == ["お腹の張り"])
     }
+
+    @Test func savingTheSameQuestionDraftAgainKeepsTheUndo() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.updateQuestionDraft(text: "お腹の張り", note: "", now: now)
+        let id = try service.addQuestion(text: "腰の痛み", now: now)
+        // addQuestion で書きかけは消えるので、書きかけを作り直してから削除する。
+        try service.updateQuestionDraft(text: "お腹の張り", note: "", now: now)
+        try service.deleteQuestion(id: id)
+
+        // シートを開いて読み込んだだけ（同じ文）なら保存しないので、削除の「元に戻す」は残る。
+        try service.updateQuestionDraft(text: "お腹の張り", note: "", now: now)
+
+        #expect(service.pendingUndo != nil)
+        try service.undo()
+        #expect(try service.questions().map(\.text) == ["腰の痛み"])
+    }
+
+    @Test func emptyQuestionDraftIsNotKept() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+
+        // 書きかけがなく、空白だけなら作らない。
+        try service.updateQuestionDraft(text: "  ", note: "\n", now: now)
+        #expect(try service.questionDraft() == nil)
+
+        // 書きかけを全部消したら、書きかけも消す。
+        try service.updateQuestionDraft(text: "お腹の", note: "", now: now)
+        try service.updateQuestionDraft(text: "", note: "", now: now)
+        #expect(try service.questionDraft() == nil)
+    }
+
+    @Test func failedQuestionDraftSaveKeepsTheLastSavedDraft() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.updateQuestionDraft(text: "お腹の", note: "", now: now)
+
+        store.failures.shouldFail = true
+        #expect(throws: NoteServiceError.saveFailed) {
+            try service.updateQuestionDraft(text: "お腹の張り", note: "夕方", now: now)
+        }
+
+        store.failures.shouldFail = false
+        try store.reopen()
+        let draft = try #require(try store.makeService().questionDraft())
+        #expect(draft.text == "お腹の")
+        #expect(draft.note == "")
+    }
 }

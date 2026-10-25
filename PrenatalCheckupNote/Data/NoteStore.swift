@@ -11,6 +11,8 @@ final class NoteStore {
     private(set) var questions: [Question] = []
     private(set) var memos: [CheckupMemo] = []
     private(set) var memoDraft: MemoDraft?
+    /// 書きかけの新しい質問（R-72）。
+    private(set) var questionDraft: QuestionDraft?
     /// 「元に戻す」を出すかどうか。窓口の値を写したもの。
     private(set) var pendingUndo: PendingUndo?
     /// 画面に出すエラーの文。出し終えたら画面が `nil` に戻す。
@@ -52,6 +54,7 @@ final class NoteStore {
             questions = try service.questions()
             memos = try service.memos()
             memoDraft = try service.memoDraft()
+            questionDraft = try service.questionDraft()
         } catch {
             errorMessage = "データを読み込めませんでした。"
         }
