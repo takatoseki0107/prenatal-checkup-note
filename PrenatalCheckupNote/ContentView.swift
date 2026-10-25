@@ -49,7 +49,11 @@ struct ContentView: View {
                 SettingsView()
             }
         }
-        .noteErrorAlert(store, isActive: router.sheet == nil)
+        // 初めて開いたときだけ「はじめに」を出す。終えると `needsOnboarding` が false になり、閉じる。
+        .fullScreenCover(isPresented: Binding { store.needsOnboarding } set: { _ in }) {
+            OnboardingView()
+        }
+        .noteErrorAlert(store, isActive: router.sheet == nil && !store.needsOnboarding)
         .environment(router)
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 /// タブ 2「これまでの健診」（要件定義 v0.4 の 4 章）。
 ///
 /// 健診後メモの一覧（新しい順）。行を押すと、見る・直す・削除するシートを開く（B5）。
-/// 週数は B6、検索は段階 D で足す。
+/// 出産予定日があれば、各行に記録したときの予定日で計算した週数を出す（R-52）。検索は段階 D で足す。
 struct PastCheckupsScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -19,7 +19,7 @@ struct PastCheckupsScreen: View {
                     Button {
                         router.sheet = .memo(memo.id)
                     } label: {
-                        MemoRow(memo: memo)
+                        MemoRow(memo: memo, isAgeShown: store.showsGestationalAge)
                     }
                     .buttonStyle(.plain)
                 }
@@ -50,11 +50,18 @@ struct PastCheckupsScreen: View {
 /// 健診後メモの 1 行。「◯月◯日（◯）の健診」・本文の 1 行目・「この健診で聞いたこと n件」。
 private struct MemoRow: View {
     let memo: CheckupMemo
+    /// 「妊娠週数を表示する」（R-53）。オフなら、過去のメモにも出さない。
+    let isAgeShown: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(memo.visitDay?.displayText ?? "日付なし")の健診")
                 .font(.headline)
+            if let ageText = GestationalAgeDisplay.text(for: memo.gestationalAgeAtVisit, isShown: isAgeShown) {
+                Text(ageText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Text(preview)
                 .font(.subheadline)
                 .foregroundStyle(memo.body.isEmpty ? .secondary : .primary)

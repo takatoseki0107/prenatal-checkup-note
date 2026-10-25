@@ -46,6 +46,8 @@ extension PendingUndo {
             "健診後メモを直しました"
         case .deletedMemo:
             "健診後メモを削除しました"
+        case .clearedDueDate:
+            "出産予定日を消しました"
         }
     }
 }
