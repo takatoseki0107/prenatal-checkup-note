@@ -23,6 +23,12 @@ enum AppDataStore {
         return try ModelContainer(for: schema, configurations: configuration)
     }
 
+    /// メモリの中だけの保存場所。プレビューに使う。
+    static func makeInMemoryContainer() throws -> ModelContainer {
+        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+        return try ModelContainer(for: schema, configurations: configuration)
+    }
+
     /// アプリで使う、本当のデータの保存場所。
     ///
     /// サンプルデータ（段階 D）は、これとは別の場所に保存する。
