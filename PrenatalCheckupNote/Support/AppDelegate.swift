@@ -15,21 +15,28 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
+    // iPhone は、この 2 つを画面のスレッドで呼び、終わりの合図（completionHandler）も画面のスレッドで受け取る決まり。
+    // `async` の書き方にすると、合図が別のスレッドから返り、「Call must be made on main thread」で止まる（段階 C の確認で見つかった）。
+    // そこで、合図はその場ですぐ返し、画面に伝える分だけを画面のスレッドに頼む。
+
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        // 知らせの中身は別のスレッドから届くことがあるので、名前（文字）だけを取り出してから、画面のスレッドで渡す。
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        // 知らせの中身はスレッドをまたいで渡せないので、名前（文字）だけを取り出して渡す。
         let identifier = response.notification.request.identifier
-        await MainActor.run {
+        Task { @MainActor in
             NotificationTapRelay.shared.receive(identifier: identifier)
         }
+        completionHandler()
     }
 
     nonisolated func userNotificationCenter(
         _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification
-    ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

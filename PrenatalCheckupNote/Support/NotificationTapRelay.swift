@@ -15,7 +15,7 @@ final class NotificationTapRelay {
 
     /// お知らせが押された。このアプリの健診のお知らせなら、「次の健診」を開く印を置く。
     func receive(identifier: String) {
-        guard identifier.hasPrefix(ReminderPlan.identifierPrefix) else {
+        guard ReminderPlan.opensNextCheckup(identifier: identifier) else {
             return
         }
         opensNextCheckup = true

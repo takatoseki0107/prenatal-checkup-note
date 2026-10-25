@@ -89,6 +89,13 @@ struct NotificationTapRelayTests {
         #expect(!relay.opensNextCheckup)
     }
 
+    @Test func opensNextCheckupForTheTestReminder() {
+        // 開発用の「1 分後に試しのお知らせ」も、本物と同じく「次の健診」を開く。
+        let relay = NotificationTapRelay()
+        relay.receive(identifier: ReminderPlan.testIdentifier)
+        #expect(relay.opensNextCheckup)
+    }
+
     @Test func ignoresOtherNotifications() {
         let relay = NotificationTapRelay()
         relay.receive(identifier: "something-else")
