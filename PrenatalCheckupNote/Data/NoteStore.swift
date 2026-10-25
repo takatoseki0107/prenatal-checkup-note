@@ -19,10 +19,15 @@ final class NoteStore {
     @ObservationIgnored private let service: NoteService
     /// 保存場所。窓口が使っている間、閉じないように持っておく。
     @ObservationIgnored private let container: ModelContainer
+    /// 元に戻すの帯を出しておく長さ（R-60、目安 6 秒）。テストでは短くする。
+    @ObservationIgnored private let undoDisplayDuration: Duration
+    /// 帯を時間で消すための待ち。新しい「元に戻す」ができたら、待ち直す。
+    @ObservationIgnored private var undoExpiry: Task<Void, Never>?
 
-    init(container: ModelContainer, service: NoteService) {
+    init(container: ModelContainer, service: NoteService, undoDisplayDuration: Duration = .seconds(6)) {
         self.container = container
         self.service = service
+        self.undoDisplayDuration = undoDisplayDuration
         reload()
     }
 
@@ -50,7 +55,39 @@ final class NoteStore {
         } catch {
             errorMessage = "データを読み込めませんでした。"
         }
-        pendingUndo = service.pendingUndo
+        let latestUndo = service.pendingUndo
+        if latestUndo != pendingUndo {
+            pendingUndo = latestUndo
+            scheduleUndoExpiry()
+        }
+    }
+
+    /// 元に戻すの帯を、決まった時間のあとに消す（R-60）。
+    ///
+    /// 消すときは窓口の「元に戻す」もやめる。帯が消えたあとに戻せると、何が戻るのかわからなくなるため。
+    /// 保存に失敗した操作では「元に戻す」は変わらないので、待ちもそのまま続く。
+    private func scheduleUndoExpiry() {
+        undoExpiry?.cancel()
+        guard let undo = pendingUndo else {
+            return
+        }
+        let duration = undoDisplayDuration
+        undoExpiry = Task { [weak self] in
+            try? await Task.sleep(for: duration)
+            guard !Task.isCancelled else {
+                return
+            }
+            self?.expireUndo(undo)
+        }
+    }
+
+    private func expireUndo(_ undo: PendingUndo) {
+        // 待っている間に別の操作をしていたら、その新しい「元に戻す」は消さない。
+        guard service.pendingUndo == undo else {
+            return
+        }
+        service.discardUndo()
+        pendingUndo = nil
     }
 }
 

@@ -8,33 +8,39 @@
 import SwiftData
 import SwiftUI
 
-/// アプリの最初の画面。
+/// アプリの一番下の画面。下の 2 つのタブ「次の健診」「これまでの健診」と、シートを受け持つ（要件定義 v0.4 の 4 章）。
 ///
-/// 段階 A では、保存の土台を実際に操作して確かめる、確認用の画面を出す（要件定義 v0.4 の 9 章「確認点」）。
-/// 「次の健診」「これまでの健診」の 2 つのタブは段階 B で作る。
+/// シートはここで 1 か所にまとめて開く。失敗の知らせは、シートを開いていないときだけここで出し、
+/// 開いているときはシートの側で出す（`noteErrorAlert`）。
 struct ContentView: View {
-    #if DEBUG
-    @State private var isShowingDeveloperMenu = false
-    #endif
+    @Environment(NoteStore.self) private var store
+    @State private var router = AppRouter()
 
     var body: some View {
-        NavigationStack {
-            CheckpointView()
-                #if DEBUG
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            isShowingDeveloperMenu = true
-                        } label: {
-                            Label("開発用", systemImage: "hammer")
-                        }
-                    }
+        @Bindable var router = router
+
+        TabView(selection: $router.selectedTab) {
+            Tab("次の健診", systemImage: "list.bullet.clipboard", value: AppRouter.Tab.next) {
+                NavigationStack {
+                    NextCheckupScreen()
                 }
-                .sheet(isPresented: $isShowingDeveloperMenu) {
-                    DeveloperMenuView()
+            }
+            Tab("これまでの健診", systemImage: "book.closed", value: AppRouter.Tab.past) {
+                NavigationStack {
+                    PastCheckupsScreen()
                 }
-                #endif
+            }
         }
+        .sheet(item: $router.sheet) { sheet in
+            switch sheet {
+            case .addQuestion:
+                AddQuestionSheet()
+            case .settings:
+                SettingsView()
+            }
+        }
+        .noteErrorAlert(store, isActive: router.sheet == nil)
+        .environment(router)
     }
 }
 

@@ -4,6 +4,13 @@ import Testing
 
 /// 時刻を持たない日付（R-90、R-91）を確かめる。
 struct CalendarDayTests {
+    @Test func showsMonthDayAndWeekdayInJapanese() {
+        // 2026-10-25 は日曜日、2026-11-05 は木曜日、2027-01-01 は金曜日。
+        #expect(TestDates.day(2026, 10, 25).displayText == "10月25日（日）")
+        #expect(TestDates.day(2026, 11, 5).displayText == "11月5日（木）")
+        #expect(TestDates.day(2027, 1, 1).displayText == "1月1日（金）")
+    }
+
     @Test func makesOnlyRealDays() {
         #expect(CalendarDay(year: 2026, month: 2, day: 30) == nil)
         #expect(CalendarDay(year: 2026, month: 13, day: 1) == nil)
