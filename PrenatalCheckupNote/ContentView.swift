@@ -14,6 +14,7 @@ import SwiftUI
 /// 開いているときはシートの側で出す（`noteErrorAlert`）。
 struct ContentView: View {
     @Environment(NoteStore.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
     @State private var router = AppRouter()
 
     var body: some View {
@@ -54,6 +55,12 @@ struct ContentView: View {
             OnboardingView()
         }
         .noteErrorAlert(store, isActive: router.sheet == nil && !store.needsOnboarding)
+        // 前面に戻ったとき（設定アプリで通知を許可して戻ったときを含む）に、お知らせを合わせ直す（S-06）。
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                store.reminders?.requestSync()
+            }
+        }
         .environment(router)
     }
 }
