@@ -9,6 +9,8 @@ import SwiftUI
 
 @main
 struct PrenatalCheckupNoteApp: App {
+    /// お知らせを押されたときなど、iPhone からの知らせを受け取る（R-46）。
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var launch = AppLaunch.start()
 
     var body: some Scene {

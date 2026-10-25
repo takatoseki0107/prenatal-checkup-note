@@ -16,6 +16,7 @@ struct ContentView: View {
     @Environment(NoteStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
     @State private var router = AppRouter()
+    private let notificationTaps = NotificationTapRelay.shared
 
     var body: some View {
         @Bindable var router = router
@@ -59,6 +60,14 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 store.reminders?.requestSync()
+            }
+        }
+        // お知らせを押されたら「次の健診」を開く（R-46）。押されて起動したときは、画面ができた時点で印が置いてあるので、最初にも見る。
+        // シートを開いていたときは閉じない。直している途中の内容が消えないように。シートを閉じると「次の健診」が見える。
+        .onChange(of: notificationTaps.opensNextCheckup, initial: true) { _, opens in
+            if opens {
+                router.selectedTab = .next
+                notificationTaps.didOpenNextCheckup()
             }
         }
         .environment(router)

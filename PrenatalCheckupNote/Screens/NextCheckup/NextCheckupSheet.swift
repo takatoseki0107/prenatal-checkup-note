@@ -3,7 +3,8 @@ import SwiftUI
 /// 次の健診の日付と時刻を入れる・直す・消すシート（要件定義 v0.4 の 4 章「次の健診」、5.3）。
 ///
 /// 初めて入れるときは、目安の日付を入れておき、理由を添える（R-30）。目安は「保存」を押すまで予定にしない（R-31）。
-/// 「1 / 2 / 4 週間後」のボタンで日付を入れられる（R-32）。お知らせのスイッチと時刻は段階 C で足す。
+/// 「1 / 2 / 4 週間後」のボタンで日付を入れられる（R-32）。
+/// 前日の夜のお知らせのスイッチと時刻（R-40〜R-44）。時刻は触れる見本と同じくボタンを並べ、もう過ぎた時刻は出さない。
 struct NextCheckupSheet: View {
     /// 時刻の初期値。触れる見本と同じ 10:30。
     private static let defaultHour = 10
@@ -23,6 +24,15 @@ struct NextCheckupSheet: View {
     /// 保存した・消したあとか。閉じる間に「変更あり」としないため。
     @State private var isClosing = false
     @State private var isConfirmingCancel = false
+    /// 前日の夜にお知らせするか。
+    @State private var isReminderOn = false
+    /// お知らせの時刻（前日の何時何分か）。
+    @State private var reminderSlot = ReminderTimeRule.defaultSlot
+    @State private var initialIsReminderOn = false
+    @State private var initialReminderSlot = ReminderTimeRule.defaultSlot
+    /// 選んでいた時刻が過ぎて直したときの知らせ（R-42）。
+    @State private var reminderNotice: String?
+    @State private var isShowingPermissionAlert = false
 
     var body: some View {
         NavigationStack {
@@ -55,9 +65,11 @@ struct NextCheckupSheet: View {
                     }
                 }
 
+                reminderSection
+
                 if store.nextCheckup != nil {
                     Section {
-                        Button("次の健診の日付を消す", role: .destructive) {
+                        Button("次の健診の日付を消す（お知らせも取り消す）", role: .destructive) {
                             clear()
                         }
                     } footer: {
@@ -84,6 +96,11 @@ struct NextCheckupSheet: View {
                 }
             }
             .onAppear(perform: load)
+            // 日付を変えて、選んでいた時刻が過ぎたら直す（R-42）。直すのは、このシートを開いているときだけ。
+            .onChange(of: selectedDay) { _, day in
+                adjustReminderSlot(for: day)
+            }
+            .notificationPermissionAlert(isPresented: $isShowingPermissionAlert)
             .alert("変更を破棄しますか？", isPresented: $isConfirmingCancel) {
                 Button("編集を続ける", role: .cancel) {}
                 Button("破棄", role: .destructive) {
@@ -97,6 +114,54 @@ struct NextCheckupSheet: View {
         .interactiveDismissDisabled(hasChanges)
         // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
         .noteErrorAlert(store)
+    }
+
+    /// 前日の夜のお知らせ（R-40〜R-44）。触れる見本と同じ形にする。
+    private var reminderSection: some View {
+        Section {
+            Toggle(
+                "前日の夜にお知らせ",
+                isOn: Binding {
+                    isReminderOn
+                } set: { isOn in
+                    setReminder(isOn)
+                }
+            )
+            // 選べる時刻が 1 つもない日は、オンにできない（R-41）。
+            .disabled(availableSlots.isEmpty && !isReminderOn)
+
+            if availableSlots.isEmpty {
+                Text(ReminderTimeRule.unavailableMessage)
+                    .font(.footnote)
+            } else if isReminderOn {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("お知らせの時刻（前日）")
+                        .font(.subheadline.weight(.semibold))
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                        ForEach(availableSlots, id: \.self) { slot in
+                            SlotButton(slot: slot, isSelected: slot == reminderSlot) {
+                                reminderSlot = slot
+                                reminderNotice = nil
+                            }
+                        }
+                    }
+                    if let reminderNotice {
+                        Text(reminderNotice)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        } footer: {
+            if isReminderOn, !availableSlots.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("選べるのは前日の 18:00〜23:30 です。もう過ぎた時刻は出しません。")
+                    Text("届く文：「\(ReminderPlan.body)」")
+                    Text("ロック画面にも出るので、質問の中身や健康のことは書きません。")
+                }
+            }
+        }
     }
 
     /// 「◯ 週間後」のボタン。前回の健診（なければ今日）から数える（R-32）。
@@ -131,11 +196,19 @@ struct NextCheckupSheet: View {
         return HourMinute(hour: components.hour ?? Self.defaultHour, minute: components.minute ?? Self.defaultMinute)
     }
 
+    /// 選んでいる日の、まだ過ぎていないお知らせの時刻（R-41）。
+    private var availableSlots: [ReminderTimeRule.Slot] {
+        ReminderTimeRule.availableSlots(for: selectedDay, now: .now)
+    }
+
     private var hasChanges: Bool {
         guard hasLoaded, !isClosing else {
             return false
         }
-        return selectedDay != initialDay || selectedHourMinute != initialHourMinute
+        return selectedDay != initialDay
+            || selectedHourMinute != initialHourMinute
+            || isReminderOn != initialIsReminderOn
+            || (isReminderOn && reminderSlot != initialReminderSlot)
     }
 
     // MARK: - 操作
@@ -164,22 +237,88 @@ struct NextCheckupSheet: View {
         time = day.date(hour: hourMinute.hour, minute: hourMinute.minute)
         initialDay = day
         initialHourMinute = hourMinute
+
+        // お知らせ。許可がないときはオンに見せない（R-44）。初めて入れるときは、許可があればオンにしておく（触れる見本と同じ）。
+        let isAuthorized = store.reminders?.authorization == .authorized
+        if let next = store.nextCheckup {
+            isReminderOn = next.isReminderOn && isAuthorized
+            reminderSlot = next.reminderSlot
+        } else {
+            isReminderOn = isAuthorized
+            reminderSlot = ReminderTimeRule.defaultSlot
+        }
+        if isReminderOn, case .moved(_, let to) = ReminderTimeRule.adjust(reminderSlot, for: day, now: .now) {
+            reminderSlot = to
+        }
+        if ReminderTimeRule.availableSlots(for: day, now: .now).isEmpty, store.nextCheckup == nil {
+            isReminderOn = false
+        }
+        initialIsReminderOn = isReminderOn
+        initialReminderSlot = reminderSlot
         hasLoaded = true
+    }
+
+    /// お知らせのスイッチを切り替える。オンにするときは、通知の許可を確かめる（R-44）。
+    private func setReminder(_ isOn: Bool) {
+        guard isOn else {
+            isReminderOn = false
+            reminderNotice = nil
+            return
+        }
+        Task {
+            guard await ensureReminderPermission(store.reminders) else {
+                isShowingPermissionAlert = true
+                return
+            }
+            isReminderOn = true
+            adjustReminderSlot(for: selectedDay)
+        }
+    }
+
+    /// 選んでいた時刻が過ぎていたら、選べるいちばん早い時刻に直し、そのことを伝える（R-42）。
+    private func adjustReminderSlot(for day: CalendarDay) {
+        guard isReminderOn else {
+            return
+        }
+        switch ReminderTimeRule.adjust(reminderSlot, for: day, now: .now) {
+        case .unchanged:
+            break
+        case .moved(let from, let to):
+            reminderSlot = to
+            reminderNotice = ReminderTimeRule.movedMessage(from: from, to: to)
+        case .unavailable:
+            reminderNotice = nil
+        }
     }
 
     private func save() {
         let day = selectedDay
         let hourMinute = selectedHourMinute
-        // お知らせの設定は段階 C で画面に出す。それまでは、入っている設定をそのまま残す。
-        let isReminderOn = store.nextCheckup?.isReminderOn ?? false
-        let reminderSlot = store.nextCheckup?.reminderSlot ?? ReminderTimeRule.defaultSlot
+        // 画面を開いたまま時刻が過ぎることがあるので、保存の直前にも確かめる（R-41）。
+        // 過ぎていたら、直したことを画面に出して保存せずに止まる。確かめてから、もう一度「保存」を押してもらう。
+        let slot = reminderSlot
+        var turnsReminderOn = isReminderOn
+        if turnsReminderOn {
+            switch ReminderTimeRule.adjust(slot, for: day, now: .now) {
+            case .unchanged:
+                break
+            case .moved(let from, let to):
+                reminderSlot = to
+                reminderNotice = ReminderTimeRule.movedMessage(from: from, to: to) + "。よければ、もう一度「保存」を押してください。"
+                return
+            case .unavailable:
+                // 前日の夜がもう過ぎた。予定だけ保存し、今回はお知らせしない（シートに案内が出ている）。
+                turnsReminderOn = false
+            }
+        }
+        let isOnToSave = turnsReminderOn
         let result = store.perform {
             try $0.setNextCheckup(
                 day: day,
                 hour: hourMinute.hour,
                 minute: hourMinute.minute,
-                isReminderOn: isReminderOn,
-                reminderSlot: reminderSlot
+                isReminderOn: isOnToSave,
+                reminderSlot: slot
             )
         }
         if result != nil {
@@ -201,4 +340,28 @@ struct NextCheckupSheet: View {
 private struct HourMinute: Equatable {
     let hour: Int
     let minute: Int
+}
+
+/// お知らせの時刻のボタン 1 つ。選んでいるものは塗りのあるボタンにする。
+private struct SlotButton: View {
+    let slot: ReminderTimeRule.Slot
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        if isSelected {
+            Button(action: action) {
+                Text(slot.description)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .accessibilityAddTraits(.isSelected)
+        } else {
+            Button(action: action) {
+                Text(slot.description)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
+    }
 }
