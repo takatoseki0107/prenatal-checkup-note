@@ -2,8 +2,8 @@ import SwiftUI
 
 /// タブ 1「次の健診」（要件定義 v0.4 の 4 章）。
 ///
-/// B1 では「聞きたいこと」の一覧と「＋ 質問を追加」だけ。次の健診のカードは B4、「健診後メモを書く」は B3、
-/// 上の帯の妊娠週数は B6 で足す。
+/// 「聞きたいこと」の一覧と「＋ 質問を追加」。行を押すと質問のシートを開く（B2）。
+/// 次の健診のカードは B4、「健診後メモを書く」は B3、上の帯の妊娠週数は B6 で足す。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -30,7 +30,7 @@ struct NextCheckupScreen: View {
                 Text("聞きたいこと（\(store.questions.count)件）")
             } footer: {
                 if !store.questions.isEmpty {
-                    Text("丸を押すと「聞いた」になります。星は大事な質問の印です。長押しで並べ替え、左にスワイプで削除できます。")
+                    Text("丸を押すと「聞いた」になります。星は大事な質問の印です。文を押すと直せます。長押しで並べ替え、左にスワイプで削除できます。")
                 }
             }
         }
@@ -72,9 +72,10 @@ struct NextCheckupScreen: View {
     }
 }
 
-/// 聞きたいことの 1 行。丸（聞いた）・本文・補足・先生の答え・星。
+/// 聞きたいことの 1 行。丸（聞いた）・本文・補足・先生の答え・星。文のところを押すと、質問のシートを開く。
 private struct QuestionRow: View {
     @Environment(NoteStore.self) private var store
+    @Environment(AppRouter.self) private var router
     let question: Question
 
     var body: some View {
@@ -90,22 +91,30 @@ private struct QuestionRow: View {
             .accessibilityLabel(question.isAsked ? "聞いた" : "聞く前")
             .accessibilityHint(question.isAsked ? "押すと聞く前に戻します" : "押すと聞いたにします")
 
-            VStack(alignment: .leading, spacing: 4) {
-                // 丸を付けても、その場に残して薄く出す（R-02）。
-                Text(question.text)
-                    .foregroundStyle(question.isAsked ? .secondary : .primary)
-                if !question.note.isEmpty {
-                    Text(question.note)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+            Button {
+                router.sheet = .editQuestion(question.id)
+            } label: {
+                VStack(alignment: .leading, spacing: 4) {
+                    // 丸を付けても、その場に残して薄く出す（R-02）。
+                    Text(question.text)
+                        .foregroundStyle(question.isAsked ? .secondary : .primary)
+                    if !question.note.isEmpty {
+                        Text(question.note)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    if !question.answer.isEmpty {
+                        Text("先生の答え：\(question.answer)")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                if !question.answer.isEmpty {
-                    Text("先生の答え：\(question.answer)")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // 文のない右側の余白を押しても開くようにする。
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .accessibilityHint("押すと、質問を直す画面を開きます")
 
             // 星は印だけ。付けても並びは変えない（R-03）。
             Button {

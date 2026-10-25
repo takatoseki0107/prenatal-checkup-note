@@ -429,12 +429,28 @@ final class NoteService {
     }
 
     /// 書きかけの質問を保存する。なければ作る（R-72）。
+    ///
+    /// 保存されている書きかけと同じなら、保存しない。シートを開いて読み込んだだけで保存すると、
+    /// 前の操作の「元に戻す」が消えてしまうため（保存に成功すると「元に戻す」は消える。R-60）。
+    /// 質問も補足も空にしたら、書きかけを消す（空の書きかけを残さない）。
     func updateQuestionDraft(text: String, note: String, now: Date) throws {
+        let existing = try questionDraft()
+        let isEmpty = InputText.normalized(text) == nil && InputText.normalized(note) == nil
+        if let existing, existing.text == text, existing.note == note {
+            return
+        }
+        if existing == nil, isEmpty {
+            return
+        }
         try perform {
             if let draft = try questionDraft() {
-                draft.text = text
-                draft.note = note
-                draft.updatedAt = now
+                if isEmpty {
+                    context.delete(draft)
+                } else {
+                    draft.text = text
+                    draft.note = note
+                    draft.updatedAt = now
+                }
             } else {
                 context.insert(QuestionDraft(text: text, note: note, updatedAt: now))
             }
