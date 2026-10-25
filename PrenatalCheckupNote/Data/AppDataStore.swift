@@ -11,6 +11,8 @@ enum AppDataStore {
         NextCheckup.self,
         BringItem.self,
         PregnancyProfile.self,
+        MemoDraft.self,
+        QuestionDraft.self,
     ])
 
     /// 指定の場所に保存するコンテナ。iCloud とは同期しない（1 章）。
