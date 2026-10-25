@@ -54,6 +54,9 @@ jobs:
           xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
 
       - name: Build and run tests
+        # 失敗したテストだけ、1 回だけやり直す。CI のシミュレーターでアプリの起動が時間切れになることがあるため
+        # （PR #19 で、コードは変えずに再実行して通った）。2 回とも落ちたら、本当の失敗として扱う。
+        # 判断の記録: docs/adr/0003-ci-runner.md
         run: |
           set -o pipefail
           xcodebuild test \
@@ -61,6 +64,8 @@ jobs:
             -scheme PrenatalCheckupNote \
             -destination "id=${{ steps.simulator.outputs.udid }}" \
             -parallel-testing-enabled NO \
+            -retry-tests-on-failure \
+            -test-iterations 2 \
             -resultBundlePath TestResults.xcresult \
             CODE_SIGNING_ALLOWED=NO
 
