@@ -15,6 +15,10 @@ final class NoteStore {
     private(set) var questionDraft: QuestionDraft?
     /// 次の健診。日付が入っていなければ `nil`。
     private(set) var nextCheckup: NextCheckup?
+    /// 持ち物の品目（R-34）。
+    private(set) var bringItems: [BringItem] = []
+    /// 出産予定日。入れていなければ `nil`（B6 で入れられるようにする）。
+    private(set) var dueDate: CalendarDay?
     /// 「元に戻す」を出すかどうか。窓口の値を写したもの。
     private(set) var pendingUndo: PendingUndo?
     /// 画面に出すエラーの文。出し終えたら画面が `nil` に戻す。
@@ -64,6 +68,8 @@ final class NoteStore {
             memoDraft = try service.memoDraft()
             questionDraft = try service.questionDraft()
             nextCheckup = try service.nextCheckup()
+            bringItems = try service.bringItems()
+            dueDate = try service.profile()?.dueDateNumber.flatMap { CalendarDay(number: $0) }
         } catch {
             errorMessage = "データを読み込めませんでした。"
         }

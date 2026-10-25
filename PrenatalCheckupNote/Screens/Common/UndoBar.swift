@@ -40,6 +40,8 @@ extension PendingUndo {
             "健診後メモを保存しました"
         case .clearedNextCheckup:
             "次の健診の日付を消しました"
+        case .removedBringItem(let item):
+            "「\(item.name)」を持ち物から外しました"
         }
     }
 }

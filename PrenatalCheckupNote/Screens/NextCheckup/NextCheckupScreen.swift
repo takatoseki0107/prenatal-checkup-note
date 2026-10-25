@@ -2,14 +2,16 @@ import SwiftUI
 
 /// タブ 1「次の健診」（要件定義 v0.4 の 4 章）。
 ///
-/// 「聞きたいこと」の一覧と、下の「＋ 質問を追加」「健診後メモを書く」。行を押すと質問のシートを開く。
-/// 次の健診のカードは B4、上の帯の妊娠週数は B6 で足す。
+/// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
+/// 行を押すと質問のシートを開く。上の帯の妊娠週数は B6、カードのお知らせのスイッチは段階 C で足す。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
 
     var body: some View {
         List {
+            NextCheckupCard()
+
             Section {
                 if store.questions.isEmpty {
                     Text("聞きたいことはまだありません。思いついたら「＋ 質問を追加」で書き留めておきましょう。")
@@ -160,5 +162,66 @@ private struct QuestionRow: View {
             .accessibilityLabel(question.isStarred ? "星あり" : "星なし")
             .accessibilityHint(question.isStarred ? "押すと星を外します" : "押すと星を付けます")
         }
+    }
+}
+
+/// 次の健診のカード（要件定義 v0.4 の 4 章）。
+///
+/// 日付が入っているときは、日時と「変更」、持ち物 n / m と「見る」。
+/// 日付がないときは、点線の「＋ 次の健診の日付を入れる」と、その下に案内（R-20 の入口に日付が要るため）。
+private struct NextCheckupCard: View {
+    @Environment(NoteStore.self) private var store
+    @Environment(AppRouter.self) private var router
+
+    var body: some View {
+        if let next = store.nextCheckup, let day = next.day {
+            Section {
+                HStack(spacing: 8) {
+                    Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button("変更") {
+                        router.sheet = .nextCheckup
+                    }
+                    .buttonStyle(.borderless)
+                    .fontWeight(.semibold)
+                }
+                HStack(spacing: 8) {
+                    Text("持ち物　\(checkedItemCount) / \(store.bringItems.count)")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button("見る") {
+                        router.sheet = .bringItems
+                    }
+                    .buttonStyle(.borderless)
+                    .fontWeight(.semibold)
+                }
+            }
+        } else {
+            Section {
+                Button {
+                    router.sheet = .nextCheckup
+                } label: {
+                    Text("＋ 次の健診の日付を入れる")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
+                                .foregroundStyle(.secondary)
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            } footer: {
+                Text("健診の日付を入れると、健診後メモを書けます。")
+            }
+        }
+    }
+
+    private var checkedItemCount: Int {
+        store.bringItems.filter(\.isChecked).count
     }
 }

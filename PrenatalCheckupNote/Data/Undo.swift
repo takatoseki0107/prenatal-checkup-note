@@ -34,6 +34,13 @@ nonisolated struct MemoDraftSnapshot: Equatable, Sendable {
     let updatedAt: Date
 }
 
+nonisolated struct BringItemSnapshot: Equatable, Sendable {
+    let id: UUID
+    let name: String
+    let isChecked: Bool
+    let sortOrder: Int
+}
+
 /// 戻せる操作（直前の 1 回だけ。R-60）。
 nonisolated enum PendingUndo: Equatable, Sendable {
     /// 質問 1 件の削除（R-06）。
@@ -42,6 +49,8 @@ nonisolated enum PendingUndo: Equatable, Sendable {
     case savedMemo(SavedMemoUndo)
     /// 次の健診の日付を消した（R-33）。
     case clearedNextCheckup(NextCheckupSnapshot)
+    /// 持ち物の品目を外した（R-34）。
+    case removedBringItem(BringItemSnapshot)
 }
 
 nonisolated struct SavedMemoUndo: Equatable, Sendable {
@@ -94,5 +103,11 @@ extension MemoDraft {
             nextCheckupIDAtStart: nextCheckupIDAtStart,
             updatedAt: updatedAt
         )
+    }
+}
+
+extension BringItem {
+    var snapshot: BringItemSnapshot {
+        BringItemSnapshot(id: id, name: name, isChecked: isChecked, sortOrder: sortOrder)
     }
 }

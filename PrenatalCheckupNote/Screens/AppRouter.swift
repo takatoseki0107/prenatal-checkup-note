@@ -24,6 +24,10 @@ final class AppRouter {
         case editQuestion(UUID)
         /// 健診後メモを書く（入力途中のメモがあれば続きから）。開く前に書きかけを作っておく。
         case writeMemo
+        /// 次の健診の日付と時刻を入れる・直す・消す。
+        case nextCheckup
+        /// 持ち物を見る・チェックする・足す・外す。
+        case bringItems
         /// 設定。
         case settings
 
