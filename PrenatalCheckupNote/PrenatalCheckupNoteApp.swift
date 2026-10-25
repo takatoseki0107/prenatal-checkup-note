@@ -9,9 +9,21 @@ import SwiftUI
 
 @main
 struct PrenatalCheckupNoteApp: App {
+    @State private var launch = AppLaunch.start()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            switch launch {
+            case .ready(let store):
+                ContentView()
+                    .environment(store)
+            case .failed(let message):
+                ContentUnavailableView(
+                    "データを開けませんでした",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(message)
+                )
+            }
         }
     }
 }
