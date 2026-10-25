@@ -26,7 +26,7 @@ struct MemoDetailSheet: View {
                     if isEditing {
                         editForm
                     } else {
-                        MemoView(memo: memo)
+                        MemoView(memo: memo, isAgeShown: store.showsGestationalAge)
                     }
                 } else if !isClosing {
                     ContentUnavailableView(
@@ -220,9 +220,11 @@ struct MemoDetailSheet: View {
     }
 }
 
-/// 健診後メモを見る画面（R-18 の「見る」）。
+/// 健診後メモを見る画面（R-18 の「見る」）。いちばん下から、文章で共有できる（段階 D）。
 private struct MemoView: View {
     let memo: CheckupMemo
+    /// 「妊娠週数を表示する」。オフなら、共有の文章にも週数を入れない。
+    let isAgeShown: Bool
 
     var body: some View {
         List {
@@ -246,7 +248,27 @@ private struct MemoView: View {
                     }
                 }
             }
+            Section {
+                NavigationLink {
+                    ShareTextView(text: shareText)
+                } label: {
+                    Label("この健診後メモを共有する", systemImage: "square.and.arrow.up")
+                }
+            }
         }
+    }
+
+    /// 共有する文章。週数は「妊娠週数を表示する」がオンのときだけ入れる。
+    private var shareText: String {
+        var title = "\(memo.visitDay?.displayText ?? "日付なし")の健診"
+        if let ageText = GestationalAgeDisplay.text(for: memo.gestationalAgeAtVisit, isShown: isAgeShown) {
+            title += "（\(ageText)）"
+        }
+        return ShareText.memo(
+            title: title,
+            body: memo.body,
+            items: memo.sortedItems.map { ShareText.MemoItem(question: $0.questionText, note: $0.note, answer: $0.answer) }
+        )
     }
 }
 

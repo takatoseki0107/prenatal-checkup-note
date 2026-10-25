@@ -52,6 +52,15 @@ struct NextCheckupScreen: View {
         }
         .navigationTitle("次の健診")
         .toolbar {
+            // 聞きたいことの一覧を文章で共有する（段階 D）。質問がなければ押せない。
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    router.sheet = .shareQuestions
+                } label: {
+                    Label("共有", systemImage: "square.and.arrow.up")
+                }
+                .disabled(store.questions.isEmpty)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     router.sheet = .settings
