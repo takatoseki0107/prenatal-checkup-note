@@ -41,6 +41,24 @@ nonisolated struct BringItemSnapshot: Equatable, Sendable {
     let sortOrder: Int
 }
 
+nonisolated struct MemoItemSnapshot: Equatable, Sendable {
+    let id: UUID
+    let questionText: String
+    let answer: String
+    let note: String
+    let sortOrder: Int
+}
+
+nonisolated struct CheckupMemoSnapshot: Equatable, Sendable {
+    let id: UUID
+    let visitDayNumber: Int
+    let body: String
+    let dueDateNumberAtVisit: Int?
+    let createdAt: Date
+    let updatedAt: Date
+    let items: [MemoItemSnapshot]
+}
+
 /// 戻せる操作（直前の 1 回だけ。R-60）。
 nonisolated enum PendingUndo: Equatable, Sendable {
     /// 質問 1 件の削除（R-06）。
@@ -51,6 +69,10 @@ nonisolated enum PendingUndo: Equatable, Sendable {
     case clearedNextCheckup(NextCheckupSnapshot)
     /// 持ち物の品目を外した（R-34）。
     case removedBringItem(BringItemSnapshot)
+    /// 過去の健診後メモを直した（R-18）。直す前の値を持つ。
+    case editedMemo(CheckupMemoSnapshot)
+    /// 健診後メモを削除した（R-19）。帯が出ている間だけ戻せる。
+    case deletedMemo(CheckupMemoSnapshot)
 }
 
 nonisolated struct SavedMemoUndo: Equatable, Sendable {
@@ -109,5 +131,21 @@ extension MemoDraft {
 extension BringItem {
     var snapshot: BringItemSnapshot {
         BringItemSnapshot(id: id, name: name, isChecked: isChecked, sortOrder: sortOrder)
+    }
+}
+
+extension CheckupMemo {
+    var snapshot: CheckupMemoSnapshot {
+        CheckupMemoSnapshot(
+            id: id,
+            visitDayNumber: visitDayNumber,
+            body: body,
+            dueDateNumberAtVisit: dueDateNumberAtVisit,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            items: sortedItems.map {
+                MemoItemSnapshot(id: $0.id, questionText: $0.questionText, answer: $0.answer, note: $0.note, sortOrder: $0.sortOrder)
+            }
+        )
     }
 }

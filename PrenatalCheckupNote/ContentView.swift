@@ -43,6 +43,8 @@ struct ContentView: View {
                 NextCheckupSheet()
             case .bringItems:
                 BringItemsSheet()
+            case .memo(let memoID):
+                MemoDetailSheet(memoID: memoID)
             case .settings:
                 SettingsView()
             }
