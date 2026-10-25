@@ -39,6 +39,10 @@ struct ContentView: View {
                 EditQuestionSheet(questionID: questionID)
             case .writeMemo:
                 WriteMemoSheet()
+            case .nextCheckup:
+                NextCheckupSheet()
+            case .bringItems:
+                BringItemsSheet()
             case .settings:
                 SettingsView()
             }

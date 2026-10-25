@@ -96,4 +96,32 @@ struct NextCheckupSuggestionTests {
         #expect(suggestion.day == today)
         #expect(suggestion.baseDay == TestDates.day(2026, 10, 11))
     }
+
+    // MARK: - 画面に出す文（R-30、R-32）
+
+    @Test func explainsTheStandardInterval() {
+        let lastVisit = TestDates.day(2026, 10, 20)
+        let dueDate = lastVisit.adding(days: 280 - 140)
+        let suggestion = NextCheckupSuggestion.make(visitDays: [lastVisit], dueDate: dueDate, today: today)
+        #expect(suggestion.reasonText == "最初の日付は、前回の健診（妊娠 20 週）の標準の間隔（4 週間）から入れています。")
+    }
+
+    @Test func explainsTheSameIntervalAsLastTime() {
+        let suggestion = NextCheckupSuggestion.make(
+            visitDays: [TestDates.day(2026, 10, 4), TestDates.day(2026, 10, 18)],
+            dueDate: nil,
+            today: today
+        )
+        #expect(suggestion.reasonText == "最初の日付は、前回と同じ間隔（14 日）にしています。")
+    }
+
+    @Test func explainsTheDefaultInterval() {
+        let suggestion = NextCheckupSuggestion.make(visitDays: [], dueDate: nil, today: today)
+        #expect(suggestion.reasonText == "最初の日付は、2 週間後にしています（前回の間隔がわからないため）。")
+    }
+
+    @Test func saysWhereTheWeekButtonsCountFrom() {
+        #expect(NextCheckupSuggestion.baseLabel(lastVisit: TestDates.day(2026, 10, 18), today: today) == "前回の健診（10月18日（日））から")
+        #expect(NextCheckupSuggestion.baseLabel(lastVisit: nil, today: today) == "今日（10月25日（日））から")
+    }
 }

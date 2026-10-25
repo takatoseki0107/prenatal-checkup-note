@@ -290,6 +290,32 @@ final class NoteService {
         pendingUndo = .clearedNextCheckup(snapshot)
     }
 
+    /// 持ち物の品目を足す（いちばん下）。品目は次の健診でも使うので残る（R-34）。
+    @discardableResult
+    func addBringItem(name: String) throws -> UUID {
+        guard let name = InputText.normalized(name) else {
+            throw NoteServiceError.emptyText
+        }
+        return try perform { () throws -> UUID in
+            let nextOrder = (try bringItems().map(\.sortOrder).max() ?? -1) + 1
+            let item = BringItem(name: name, sortOrder: nextOrder)
+            context.insert(item)
+            return item.id
+        }
+    }
+
+    /// 持ち物の品目を外す。元に戻せる（R-34）。
+    func removeBringItem(id: UUID) throws {
+        guard let item = try bringItems().first(where: { $0.id == id }) else {
+            throw NoteServiceError.notFound
+        }
+        let snapshot = item.snapshot
+        try perform {
+            context.delete(item)
+        }
+        pendingUndo = .removedBringItem(snapshot)
+    }
+
     func setBringItemChecked(_ isChecked: Bool, itemID: UUID) throws {
         try perform {
             guard let item = try bringItems().first(where: { $0.id == itemID }) else {
@@ -354,6 +380,9 @@ final class NoteService {
                     context.delete(current)
                 }
                 context.insert(NextCheckup(snapshot))
+
+            case .removedBringItem(let snapshot):
+                context.insert(BringItem(id: snapshot.id, name: snapshot.name, isChecked: snapshot.isChecked, sortOrder: snapshot.sortOrder))
             }
         }
         return undo
