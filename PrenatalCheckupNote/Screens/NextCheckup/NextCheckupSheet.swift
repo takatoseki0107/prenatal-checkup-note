@@ -122,13 +122,14 @@ struct NextCheckupSheet: View {
             Toggle(
                 "前日の夜にお知らせ",
                 isOn: Binding {
-                    isReminderOn
+                    showsReminderOn
                 } set: { isOn in
                     setReminder(isOn)
                 }
             )
-            // 選べる時刻が 1 つもない日は、オンにできない（R-41）。
-            .disabled(availableSlots.isEmpty && !isReminderOn)
+            // 選べる時刻が 1 つもない日は、オフに見せて押せなくする（R-41）。
+            // 「設定できません」と出ているのにオンに見えると、紛らわしいため（段階 C の確認で見つかった）。
+            .disabled(availableSlots.isEmpty)
 
             if availableSlots.isEmpty {
                 Text(ReminderTimeRule.unavailableMessage)
@@ -201,14 +202,20 @@ struct NextCheckupSheet: View {
         ReminderTimeRule.availableSlots(for: selectedDay, now: .now)
     }
 
+    /// スイッチをオンに見せるか。オンにしてあっても、選べる時刻がない日はオフに見せる（R-41）。
+    /// オンにしてあったことは覚えておき、別の日に選び直すとオンに戻る。保存するのも、この見えている状態。
+    private var showsReminderOn: Bool {
+        isReminderOn && !availableSlots.isEmpty
+    }
+
     private var hasChanges: Bool {
         guard hasLoaded, !isClosing else {
             return false
         }
         return selectedDay != initialDay
             || selectedHourMinute != initialHourMinute
-            || isReminderOn != initialIsReminderOn
-            || (isReminderOn && reminderSlot != initialReminderSlot)
+            || showsReminderOn != initialIsReminderOn
+            || (showsReminderOn && reminderSlot != initialReminderSlot)
     }
 
     // MARK: - 操作
@@ -250,10 +257,8 @@ struct NextCheckupSheet: View {
         if isReminderOn, case .moved(_, let to) = ReminderTimeRule.adjust(reminderSlot, for: day, now: .now) {
             reminderSlot = to
         }
-        if ReminderTimeRule.availableSlots(for: day, now: .now).isEmpty, store.nextCheckup == nil {
-            isReminderOn = false
-        }
-        initialIsReminderOn = isReminderOn
+        // 開いたときに見えている状態を、変えたかどうかを比べる元にする。
+        initialIsReminderOn = isReminderOn && !ReminderTimeRule.availableSlots(for: day, now: .now).isEmpty
         initialReminderSlot = reminderSlot
         hasLoaded = true
     }
