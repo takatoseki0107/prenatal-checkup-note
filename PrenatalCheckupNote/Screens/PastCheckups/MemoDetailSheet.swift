@@ -95,8 +95,10 @@ struct MemoDetailSheet: View {
                 Text(deleteMessage)
             }
         }
-        // 直していて保存していない変更があるときは、下にスワイプしても閉じない。
-        .interactiveDismissDisabled(isEditing && hasChanges)
+        // 「健診後メモを直す」の間は、変更があってもなくても、下にスワイプでは閉じない。抜けるのは「キャンセル」か「保存」。
+        // 変更があるときだけ止める形だと、日本語の変換を確定する前の文字がまだ変更に数えられず、
+        // そのすきにスワイプで閉じられて、直しかけの内容が消えた（B5 の画面の確認で見つかった）。
+        .interactiveDismissDisabled(isEditing)
         // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
         .noteErrorAlert(store)
     }
