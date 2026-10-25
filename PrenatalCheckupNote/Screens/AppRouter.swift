@@ -22,6 +22,8 @@ final class AppRouter {
         case addQuestion
         /// すでにある質問を見る・直す・削除する。
         case editQuestion(UUID)
+        /// 健診後メモを書く（入力途中のメモがあれば続きから）。開く前に書きかけを作っておく。
+        case writeMemo
         /// 設定。
         case settings
 

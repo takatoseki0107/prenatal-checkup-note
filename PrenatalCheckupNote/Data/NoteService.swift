@@ -389,7 +389,15 @@ final class NoteService {
     }
 
     /// 書きかけの健診後メモを保存する。入力中に少しずつ呼ぶ（R-70）。本文は入力のまま残す。
+    ///
+    /// 保存されている書きかけと同じなら、保存しない（シートを開いただけで、前の操作の「元に戻す」を消さないため）。
     func updateMemoDraft(visitDay: CalendarDay, body: String, excludedQuestionIDs: Set<UUID>, now: Date) throws {
+        if let existing = try memoDraft(),
+           existing.visitDay == visitDay,
+           existing.body == body,
+           Set(existing.excludedQuestionIDs) == excludedQuestionIDs {
+            return
+        }
         try perform {
             guard let draft = try memoDraft() else {
                 throw NoteServiceError.notFound

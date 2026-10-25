@@ -279,6 +279,24 @@ struct UndoAndDraftTests {
         #expect(try service.questions().map(\.text) == ["腰の痛み"])
     }
 
+    @Test func savingTheSameMemoDraftAgainKeepsTheUndo() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.startMemoDraft(today: today, now: now)
+        try service.updateMemoDraft(visitDay: today, body: "様子見でよい", excludedQuestionIDs: [], now: now)
+        let id = try service.addQuestion(text: "腰の痛み", now: now)
+        try service.deleteQuestion(id: id)
+
+        // シートを開いて読み込んだだけ（同じ内容）なら保存しないので、削除の「元に戻す」は残る。
+        try service.updateMemoDraft(visitDay: today, body: "様子見でよい", excludedQuestionIDs: [], now: now)
+        #expect(service.pendingUndo != nil)
+
+        // 内容が変われば保存し、前の「元に戻す」は消える（R-60）。
+        try service.updateMemoDraft(visitDay: today, body: "様子見でよいと言われた", excludedQuestionIDs: [], now: now)
+        #expect(service.pendingUndo == nil)
+        #expect(try service.memoDraft()?.body == "様子見でよいと言われた")
+    }
+
     @Test func emptyQuestionDraftIsNotKept() throws {
         let store = try TemporaryStore()
         let service = store.makeService()

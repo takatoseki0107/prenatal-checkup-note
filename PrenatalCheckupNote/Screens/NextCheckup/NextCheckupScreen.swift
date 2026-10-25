@@ -2,8 +2,8 @@ import SwiftUI
 
 /// タブ 1「次の健診」（要件定義 v0.4 の 4 章）。
 ///
-/// 「聞きたいこと」の一覧と「＋ 質問を追加」。行を押すと質問のシートを開く（B2）。
-/// 次の健診のカードは B4、「健診後メモを書く」は B3、上の帯の妊娠週数は B6 で足す。
+/// 「聞きたいこと」の一覧と、下の「＋ 質問を追加」「健診後メモを書く」。行を押すと質問のシートを開く。
+/// 次の健診のカードは B4、上の帯の妊娠週数は B6 で足す。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -47,19 +47,51 @@ struct NextCheckupScreen: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 UndoBar()
-                Button {
-                    router.sheet = .addQuestion
-                } label: {
-                    Label("質問を追加", systemImage: "plus")
-                        .frame(maxWidth: .infinity)
+                // 「健診後メモを書く」を出さないときは、「＋ 質問を追加」を横いっぱいにする（R-20）。
+                HStack(spacing: 12) {
+                    Button {
+                        router.sheet = .addQuestion
+                    } label: {
+                        Label("質問を追加", systemImage: "plus")
+                            .frame(maxWidth: .infinity)
+                    }
+                    if let title = memoEntry.title {
+                        Button {
+                            startMemo()
+                        } label: {
+                            Text(title)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
             }
             .background(.bar)
             .animation(.default, value: store.pendingUndo)
+        }
+    }
+
+    /// 健診後メモの入口（R-20）。次の健診の日付・丸を付けた質問・入力途中のメモのどれかがあるときだけ出す。
+    private var memoEntry: MemoSheetRules.Entry {
+        MemoSheetRules.entry(
+            hasNextCheckup: store.nextCheckup != nil,
+            hasAskedQuestion: store.questions.contains(where: \.isAsked),
+            hasDraft: store.memoDraft != nil
+        )
+    }
+
+    /// 健診後メモを書き始める。入力途中のメモを作ってから（あれば、それを使って）シートを開く（R-10、R-70）。
+    private func startMemo() {
+        let started = store.perform(saveFailureMessage: "健診後メモを書き始められませんでした。もう一度試してください。") {
+            try $0.startMemoDraft(today: CalendarDay(.now), now: .now)
+        }
+        if started != nil {
+            router.sheet = .writeMemo
         }
     }
 

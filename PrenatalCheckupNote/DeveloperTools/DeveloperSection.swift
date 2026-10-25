@@ -3,16 +3,14 @@ import SwiftUI
 
 /// 設定の中の、開発用の欄。開発用ビルドだけに含め、リリースビルドには入れない。
 ///
-/// 保存の失敗の切り替え、段階 A の確認用の画面、実機での動作確認への入口をまとめる。サンプルデータは段階 D でここに置く。
+/// 保存の失敗の切り替えと、実機での動作確認への入口をまとめる。サンプルデータは段階 D でここに置く。
+/// 段階 A の確認用の画面は、本番の健診後メモのシートができた B3 で外した。
 struct DeveloperSection: View {
     var body: some View {
         @Bindable var settings = DeveloperSettings.shared
 
         Section {
             Toggle("保存を失敗させる", isOn: $settings.failsSaving)
-            NavigationLink("確認用の画面（段階 A）") {
-                CheckpointView()
-            }
             NavigationLink("実機での動作確認") {
                 DeviceCheckView()
             }

@@ -37,6 +37,8 @@ struct ContentView: View {
                 AddQuestionSheet()
             case .editQuestion(let questionID):
                 EditQuestionSheet(questionID: questionID)
+            case .writeMemo:
+                WriteMemoSheet()
             case .settings:
                 SettingsView()
             }
