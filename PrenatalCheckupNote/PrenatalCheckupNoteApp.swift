@@ -20,6 +20,8 @@ struct PrenatalCheckupNoteApp: App {
                 case .ready(let store):
                     ContentView()
                         .environment(store)
+                        // 保存場所を切り替えたら（サンプルデータ）、画面を作り直す。開いていたシートも閉じる。
+                        .id(ObjectIdentifier(store))
                 case .failed(let message):
                     ContentUnavailableView(
                         "データを開けませんでした",
@@ -32,6 +34,12 @@ struct PrenatalCheckupNoteApp: App {
             // （例：「Oct 25, 2026」ではなく「2026/10/25」）。日付の計算は、別に `Calendar.japan` で固定している（R-90）。
             // シートもこの下で開くので、同じ書き方になる。
             .environment(\.locale, Locale(identifier: "ja_JP"))
+            #if DEBUG
+            // 開発用の「サンプルデータを表示する」を切り替えたら、その保存場所で開き直す（段階 D）。
+            .onChange(of: DeveloperSettings.shared.showsSampleData) { _, showsSampleData in
+                launch = AppLaunch.start(showsSampleData: showsSampleData)
+            }
+            #endif
         }
     }
 }

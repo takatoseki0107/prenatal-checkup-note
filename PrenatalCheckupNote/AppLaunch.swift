@@ -6,15 +6,35 @@ enum AppLaunch {
     case ready(NoteStore)
     case failed(String)
 
-    static func start(now: Date = .now, arguments: [String] = ProcessInfo.processInfo.arguments) -> AppLaunch {
+    /// - Parameter showsSampleData: 開発用の「サンプルデータを表示する」。`true` なら、別の保存場所に例のデータを入れて開き、
+    ///   お知らせは iPhone の通知に触れない窓口を使う（段階 D）。リリースビルドでは無視する。
+    static func start(
+        now: Date = .now,
+        arguments: [String] = ProcessInfo.processInfo.arguments,
+        showsSampleData: Bool = false
+    ) -> AppLaunch {
         let options = LaunchOptions(arguments: arguments)
+        #if DEBUG
+        let usesSampleData = showsSampleData
+        #else
+        let usesSampleData = false
+        #endif
         do {
-            let container = try options.makeContainer()
+            let container: ModelContainer
+            let reminderCenter: any ReminderCenter
+            if usesSampleData {
+                container = try AppDataStore.makeSampleContainer()
+                try SampleData.seed(into: ModelContext(container), today: CalendarDay(now), now: now)
+                reminderCenter = SampleReminderCenter()
+            } else {
+                container = try options.makeContainer()
+                reminderCenter = SystemReminderCenter()
+            }
             let service = NoteService(context: ModelContext(container), persist: savesData)
             try service.prepareInitialData(now: now)
             let store = NoteStore(container: container, service: service, undoDisplayDuration: options.undoDisplayDuration)
             // お知らせは、いまの「次の健診」に合わせる（S-06）。アプリを開いたときにも一度合わせる。
-            let reminders = ReminderSync(center: SystemReminderCenter(), currentInput: { [weak store] in
+            let reminders = ReminderSync(center: reminderCenter, currentInput: { [weak store] in
                 store?.reminderInput
             })
             store.reminders = reminders

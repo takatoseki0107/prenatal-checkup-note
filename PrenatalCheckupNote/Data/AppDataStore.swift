@@ -38,6 +38,18 @@ enum AppDataStore {
         return try makeContainer(url: directory.appending(path: "PrenatalCheckupNote.store"))
     }
 
+    /// サンプルデータの保存場所。本当のデータとは別のフォルダーに置き、開くたびに空にする（段階 D）。
+    ///
+    /// 開くたびに `SampleData` を入れ直すので、いつ見せても同じ例になる。サンプルの上で操作した内容は残らない。
+    static func makeSampleContainer() throws -> ModelContainer {
+        let directory = URL.applicationSupportDirectory.appending(path: "SampleData", directoryHint: .isDirectory)
+        if FileManager.default.fileExists(atPath: directory.path(percentEncoded: false)) {
+            try FileManager.default.removeItem(at: directory)
+        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return try makeContainer(url: directory.appending(path: "PrenatalCheckupNote.store"))
+    }
+
     /// 画面のテスト（XCUITest）で使う保存場所。本当のデータとは別のフォルダーに置く。
     ///
     /// - Parameter resettingData: `true` なら、開く前にフォルダーごと消して、空から始める。
