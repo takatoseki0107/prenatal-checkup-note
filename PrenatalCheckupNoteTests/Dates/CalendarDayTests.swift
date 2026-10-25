@@ -45,6 +45,15 @@ struct CalendarDayTests {
         #expect(TestDates.day(2026, 3, 5).description == "2026-03-05")
     }
 
+    @Test func convertsToAndFromTheStoredNumber() {
+        let day = TestDates.day(2026, 11, 5)
+
+        #expect(day.number == 20_261_105)
+        #expect(CalendarDay(number: 20_261_105) == day)
+        #expect(CalendarDay(number: 20_260_230) == nil)
+        #expect(TestDates.day(2026, 12, 31).number < TestDates.day(2027, 1, 1).number)
+    }
+
     @Test func survivesEncodingAndDecoding() throws {
         let original = TestDates.day(2026, 11, 5)
         let data = try JSONEncoder().encode(original)
