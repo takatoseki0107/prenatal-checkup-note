@@ -359,6 +359,13 @@ final class NoteService {
         return undo
     }
 
+    /// 「元に戻す」をやめる。元に戻すの帯が時間で消えたときに呼ぶ（R-60）。
+    ///
+    /// 帯が消えたあとは戻せない（削除したものは、ここで戻せなくなる。R-62）。データは何も変えないので、保存もしない。
+    func discardUndo() {
+        pendingUndo = nil
+    }
+
     // MARK: - 書きかけ
 
     func memoDraft() throws -> MemoDraft? {
