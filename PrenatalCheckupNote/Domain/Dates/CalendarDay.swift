@@ -45,6 +45,16 @@ nonisolated struct CalendarDay: Hashable, Comparable, Codable, Sendable, CustomS
         day = components.day ?? 1
     }
 
+    /// 保存用の数（例：2026 年 11 月 5 日なら 20261105）から作る。並べ替えと保存に使う。実在しない日付なら `nil`。
+    init?(number: Int, calendar: Calendar = .japan) {
+        self.init(year: number / 10_000, month: (number / 100) % 100, day: number % 100, calendar: calendar)
+    }
+
+    /// 保存用の数。例：2026 年 11 月 5 日なら 20261105。数の大小が日付の前後と一致する。
+    var number: Int {
+        year * 10_000 + month * 100 + day
+    }
+
     /// その日の指定の時刻。
     func date(hour: Int = 0, minute: Int = 0, calendar: Calendar = .japan) -> Date {
         let components = DateComponents(year: year, month: month, day: day, hour: hour, minute: minute)
