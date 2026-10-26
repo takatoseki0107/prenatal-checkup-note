@@ -327,4 +327,61 @@ struct UndoAndDraftTests {
         #expect(draft.text == "お腹の")
         #expect(draft.note == "")
     }
+
+    // MARK: - 空の書きかけの健診後メモ（段階 F）
+
+    @Test func discardsAnEmptyMemoDraft() throws {
+        // 「健診後メモを書く」を開いて、何も書かずに閉じたとき。
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.startMemoDraft(today: today, now: now)
+        try service.updateMemoDraft(visitDay: today, body: "  \n ", excludedQuestionIDs: [], now: now)
+
+        #expect(try service.discardMemoDraftIfEmpty())
+        #expect(try service.memoDraft() == nil)
+    }
+
+    @Test func keepsAMemoDraftWithText() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.startMemoDraft(today: today, now: now)
+        try service.updateMemoDraft(visitDay: today, body: "先生の話", excludedQuestionIDs: [], now: now)
+
+        #expect(try service.discardMemoDraftIfEmpty() == false)
+        #expect(try service.memoDraft()?.body == "先生の話")
+    }
+
+    @Test func keepsAMemoDraftWithAPhoto() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        let draft = try service.startMemoDraft(today: today, now: now)
+        try service.addPhoto(PreparedPhoto(imageData: Data([1, 1, 1]), thumbnailData: Data([1])), memoID: draft.id, now: now)
+
+        #expect(try service.discardMemoDraftIfEmpty() == false)
+        #expect(try service.memoDraft() != nil)
+        #expect(try service.photos(memoID: draft.id).count == 1)
+    }
+
+    @Test func keepsTheUndoWhenThereIsNoDraft() throws {
+        // シートを閉じるたびに呼ぶので、消すものがないときに「元に戻す」を消さない。
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        let id = try service.addQuestion(text: "腰の痛み", now: now)
+        try service.deleteQuestion(id: id)
+
+        #expect(try service.discardMemoDraftIfEmpty() == false)
+        #expect(service.pendingUndo != nil)
+    }
+
+    @Test func launchDiscardsAnEmptyMemoDraftLeftBefore() throws {
+        // 直す前の版で残った空の書きかけも、起動したときに消える。
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.prepareInitialData(now: now)
+        try service.startMemoDraft(today: today, now: now)
+
+        try store.makeService().prepareInitialData(now: now)
+
+        #expect(try store.makeService().memoDraft() == nil)
+    }
 }

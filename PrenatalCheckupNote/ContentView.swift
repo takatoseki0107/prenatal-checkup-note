@@ -35,7 +35,9 @@ struct ContentView: View {
                 }
             }
         }
-        .sheet(item: $router.sheet) { sheet in
+        // シートを閉じたら、空のまま残った書きかけの健診後メモを消す（段階 F）。
+        // 「健診後メモを書く」を開いて何も書かずに閉じたとき、入口が「入力途中のメモを続ける」に変わらないように。
+        .sheet(item: $router.sheet, onDismiss: { store.discardEmptyMemoDraft() }) { sheet in
             switch sheet {
             case .addQuestion:
                 AddQuestionSheet()
