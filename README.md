@@ -31,3 +31,4 @@ xcodebuild test \
 - 技術選定などの重要な判断は [docs/adr](docs/adr) に記録します。
 - 実機での確認や技術検証の結果は [docs/verification](docs/verification) に記録します。
 - 設計とコードのレビュー、実装の補助に AI（Claude・ChatGPT）を使っています。取り込む内容は、開発者が動作を確かめ、説明できる状態にしています。
+- アプリのアイコンは、開発者が ChatGPT（画像の生成）で作りました。
