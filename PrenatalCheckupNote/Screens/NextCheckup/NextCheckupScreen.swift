@@ -8,6 +8,7 @@ import SwiftUI
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         List {
@@ -86,7 +87,7 @@ struct NextCheckupScreen: View {
             VStack(spacing: 0) {
                 UndoBar()
                 // 「健診後メモを書く」を出さないときは、「＋ 質問を追加」を横いっぱいにする（R-20）。
-                HStack(spacing: 10) {
+                buttonLayout {
                     Button {
                         router.sheet = .addQuestion
                     } label: {
@@ -112,8 +113,15 @@ struct NextCheckupScreen: View {
                 .padding(.vertical, 8)
             }
             .background(AppColors.background)
+            // 下の帯は、文字サイズ最大でも画面の多くを占めないよう、大きさに上限を付ける（段階 F2）。
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             .animation(.default, value: store.pendingUndo)
         }
+    }
+
+    /// 下の 2 つのボタンの並べ方。文字サイズがとても大きいときは、文字が切れないよう縦に並べる（段階 F2）。
+    private var buttonLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
     }
 
     /// 健診後メモの入口（R-20）。次の健診の日付・丸を付けた質問・入力途中のメモのどれかがあるときだけ出す。
@@ -157,6 +165,8 @@ private struct QuestionRow: View {
             } label: {
                 Image(systemName: question.isAsked ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
+                    // 文字サイズが大きいとき、丸が大きくなりすぎて文の幅をせばめないよう、上限を付ける（段階 F2）。
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .foregroundStyle(question.isAsked ? Color.accentColor : .secondary)
             }
             .buttonStyle(.plain)
@@ -194,6 +204,7 @@ private struct QuestionRow: View {
             } label: {
                 Image(systemName: question.isStarred ? "star.fill" : "star")
                     .font(.title3)
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .foregroundStyle(question.isStarred ? AppColors.star : .secondary)
             }
             .buttonStyle(.plain)
@@ -212,13 +223,14 @@ private struct QuestionRow: View {
 private struct NextCheckupCard: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         if let next = store.nextCheckup, let day = next.day {
             Section {
                 // 一覧の行の間を空けているので、カードの中身は 1 つの行にまとめ、区切りは自分で引く。
                 VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
+                    rowLayout {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
                                 .font(.maru(.headline))
@@ -236,7 +248,7 @@ private struct NextCheckupCard: View {
                         .fontWeight(.semibold)
                     }
                     Divider()
-                    HStack(spacing: 8) {
+                    rowLayout {
                         Text("持ち物　\(checkedItemCount) / \(store.bringItems.count)")
                             .frame(maxWidth: .infinity, alignment: .leading)
                         Button("見る") {
@@ -283,6 +295,14 @@ private struct NextCheckupCard: View {
             }
             .listRowBackground(AppColors.skyCard)
         }
+    }
+
+    /// カードの行の並べ方。文字サイズがとても大きいときは、文と「変更」「見る」を横に並べず縦に積む（段階 F2）。
+    /// 横のままだと、日付が「11」「月23日」のように細かく折り返して読みにくかった。
+    private var rowLayout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
+            : AnyLayout(HStackLayout(spacing: 8))
     }
 
     private var checkedItemCount: Int {

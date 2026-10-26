@@ -37,6 +37,8 @@ struct PastCheckupsScreen: View {
             if store.pendingUndo != nil {
                 UndoBar()
                     .background(AppColors.background)
+                    // 下の帯は、文字サイズ最大でも画面の多くを占めないよう、大きさに上限を付ける（段階 F2）。
+                    .dynamicTypeSize(...DynamicTypeSize.accessibility1)
             }
         }
         .animation(.default, value: store.pendingUndo)
@@ -144,6 +146,7 @@ private struct MemoRow: View {
     let photoCount: Int
     /// 「妊娠週数を表示する」（R-53）。オフなら、過去のメモにも出さない。
     let isAgeShown: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -157,8 +160,9 @@ private struct MemoRow: View {
             Text(preview)
                 .font(.maru(.subheadline))
                 .foregroundStyle(memo.body.isEmpty ? .secondary : .primary)
-                .lineLimit(1)
-            HStack(spacing: 12) {
+                // 文字サイズがとても大きいときは 1 行に数文字しか入らないので、2 行まで見せる（段階 F2）。
+                .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
+            detailLayout {
                 Text("この健診で聞いたこと \(memo.items.count)件")
                 if photoCount > 0 {
                     // 写真の印は、文字の中に入れて「写真 n枚」とくっつける。
@@ -173,6 +177,13 @@ private struct MemoRow: View {
         .contentShape(Rectangle())
         // メモは 1 件ずつのカードにしたので、区切り線は使わない（段階 F）。
         // 以前は区切り線を行の左はしから引く直しをしていた（E3 の画面の確認で、写真の印があると左が欠けたため）。
+    }
+
+    /// 「聞いたこと」と「写真」の並べ方。文字サイズがとても大きいときは、横に並べず縦に積む（段階 F2）。
+    private var detailLayout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+            : AnyLayout(HStackLayout(spacing: 12))
     }
 
     /// 本文の 1 行目。本文がなければ、そう書く。
