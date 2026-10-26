@@ -72,6 +72,14 @@ final class NoteStore {
         }
     }
 
+    /// 空の書きかけの健診後メモを消す（段階 F）。シートを閉じたときに呼ぶ。書きかけがなければ何もしない。
+    func discardEmptyMemoDraft() {
+        guard memoDraft != nil else {
+            return
+        }
+        perform { try $0.discardMemoDraftIfEmpty() }
+    }
+
     /// 保存場所から読み直す。
     func reload() {
         do {

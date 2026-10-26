@@ -104,6 +104,8 @@ final class NoteService {
     ///
     /// 「はじめに」を作る前から使っていて、もう記録がある人には「はじめに」を出さない（終えたことにする）。
     func prepareInitialData(now: Date) throws {
+        // 前に空のまま残った書きかけの健診後メモがあれば消す（段階 F。`discardMemoDraftIfEmpty`）。
+        try discardMemoDraftIfEmpty()
         try perform {
             if let profile = try profile() {
                 if !profile.hasFinishedOnboarding, try hasAnyRecord() {
@@ -677,6 +679,29 @@ final class NoteService {
                 context.delete(draft)
             }
         }
+    }
+
+    /// 書きかけの健診後メモが空なら消す（段階 F）。消したら `true`。
+    ///
+    /// 「健診後メモを書く」を押すと、その時点で書きかけを作る（R-70）。そのため、何も書かずに閉じると空の書きかけが残り、
+    /// 入口が「入力途中のメモを続ける」に変わっていた（段階 F の確認で開発者が見つけた）。シートを閉じたときと起動したときに呼ぶ。
+    /// 空とは、本文がなく（空白だけも空）、写真もなく、「外す」を押した質問もないこと。受診日だけを変えた書きかけも空として消す。
+    /// 消すものがなければ保存もしない（保存すると、前の操作の「元に戻す」が消えてしまうため。R-60）。
+    @discardableResult
+    func discardMemoDraftIfEmpty() throws -> Bool {
+        guard let draft = try memoDraft() else {
+            return false
+        }
+        guard InputText.normalized(draft.body) == nil, draft.excludedQuestionIDs.isEmpty else {
+            return false
+        }
+        guard try photos(memoID: draft.id).isEmpty else {
+            return false
+        }
+        try perform {
+            context.delete(draft)
+        }
+        return true
     }
 
     /// 書きかけから、保存する内容を作る。外した質問がもう消されていても、保存のときに無視される。
