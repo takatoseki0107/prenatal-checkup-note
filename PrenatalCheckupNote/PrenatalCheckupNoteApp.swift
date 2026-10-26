@@ -13,11 +13,6 @@ struct PrenatalCheckupNoteApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var launch = AppLaunch.start()
 
-    init() {
-        // 画面の上の題名も丸い字体にする（段階 F）。
-        AppFonts.applyToNavigationBars()
-    }
-
     var body: some Scene {
         WindowGroup {
             Group {

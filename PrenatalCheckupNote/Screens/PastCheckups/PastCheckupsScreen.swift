@@ -19,6 +19,8 @@ struct PastCheckupsScreen: View {
                 memoListSection
             }
         }
+        // メモ 1 件ずつを、間を空けた丸いカードにする（段階 F）。
+        .listRowSpacing(10)
         .appBackground()
         .navigationTitle("健診の記録")
         .searchable(text: $query, prompt: "メモを探す（例：むくみ 足）")
@@ -67,6 +69,7 @@ struct PastCheckupsScreen: View {
                         SearchResultRow(memo: memo, snippet: result.snippet)
                     }
                     .buttonStyle(.plain)
+                    .listRowSeparator(.hidden)
                 }
             }
         } header: {
@@ -90,6 +93,7 @@ struct PastCheckupsScreen: View {
                     MemoRow(memo: memo, photoCount: store.photos(forMemo: memo.id).count, isAgeShown: store.showsGestationalAge)
                 }
                 .buttonStyle(.plain)
+                .listRowSeparator(.hidden)
             }
         } footer: {
             Text("健診が終わったら、「健診予定」の画面の「健診後メモを書く」から書きます（健診の日付を入れると出ます）。メモを押すと、見返したり直したりできます。")
@@ -164,11 +168,11 @@ private struct MemoRow: View {
             .font(.maru(.caption))
             .foregroundStyle(.secondary)
         }
+        .padding(.vertical, 4)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        // メモとメモの間の区切り線は、行の左はしから引く。
-        // 指定しないと、行の中の文字の位置に合わせて引かれ、写真の印があると左が欠けた（E3 の画面の確認で見つかった）。
-        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
+        // メモは 1 件ずつのカードにしたので、区切り線は使わない（段階 F）。
+        // 以前は区切り線を行の左はしから引く直しをしていた（E3 の画面の確認で、写真の印があると左が欠けたため）。
     }
 
     /// 本文の 1 行目。本文がなければ、そう書く。

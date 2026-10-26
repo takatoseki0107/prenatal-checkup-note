@@ -40,6 +40,7 @@ struct NextCheckupScreen: View {
                 }
                 ForEach(store.questions) { question in
                     QuestionRow(question: question)
+                        .listRowSeparator(.hidden)
                 }
                 // 長押しして指で動かすと並べ替わる（R-04）。
                 .onMove { source, destination in
@@ -57,6 +58,10 @@ struct NextCheckupScreen: View {
                 }
             }
         }
+        // 聞きたいことを 1 件ずつ、間を空けた丸いカードにする（段階 F）。
+        // 行ごとに Section を分けると長押しの並べ替え（`onMove`）が使えなくなるので、行の間を空ける形にしている。
+        // このため、健診予定のカードは 1 つの行にまとめている（`NextCheckupCard`）。
+        .listRowSpacing(10)
         .appBackground()
         .navigationTitle("健診予定")
         .toolbar {
@@ -211,35 +216,41 @@ private struct NextCheckupCard: View {
     var body: some View {
         if let next = store.nextCheckup, let day = next.day {
             Section {
-                HStack(spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
-                            .font(.maru(.headline))
-                        if let ageText = store.gestationalAgeText(on: day) {
-                            Text("\(ageText)の健診")
-                                .font(.maru(.subheadline))
-                                .foregroundStyle(.secondary)
+                // 一覧の行の間を空けているので、カードの中身は 1 つの行にまとめ、区切りは自分で引く。
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
+                                .font(.maru(.headline))
+                            if let ageText = store.gestationalAgeText(on: day) {
+                                Text("\(ageText)の健診")
+                                    .font(.maru(.subheadline))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("変更") {
-                        router.sheet = .nextCheckup
-                    }
-                    .buttonStyle(.borderless)
-                    .fontWeight(.semibold)
-                }
-                HStack(spacing: 8) {
-                    Text("持ち物　\(checkedItemCount) / \(store.bringItems.count)")
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("見る") {
-                        router.sheet = .bringItems
+                        Button("変更") {
+                            router.sheet = .nextCheckup
+                        }
+                        .buttonStyle(.borderless)
+                        .fontWeight(.semibold)
                     }
-                    .buttonStyle(.borderless)
-                    .fontWeight(.semibold)
+                    Divider()
+                    HStack(spacing: 8) {
+                        Text("持ち物　\(checkedItemCount) / \(store.bringItems.count)")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("見る") {
+                            router.sheet = .bringItems
+                        }
+                        .buttonStyle(.borderless)
+                        .fontWeight(.semibold)
+                    }
+                    if let input = store.reminderInput {
+                        Divider()
+                        ReminderRow(input: input)
+                    }
                 }
-                if let input = store.reminderInput {
-                    ReminderRow(input: input)
-                }
+                .padding(.vertical, 6)
             }
             .listRowBackground(AppColors.skyCard)
         } else {
