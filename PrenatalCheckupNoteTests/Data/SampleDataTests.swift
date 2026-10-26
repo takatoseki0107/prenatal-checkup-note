@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import PrenatalCheckupNote
 
 /// サンプルデータ（段階 D）を確かめる。いつ入れても、今日から数えた同じ例になること。
@@ -48,6 +49,23 @@ struct SampleDataTests {
         let bringItems = try service.bringItems()
         #expect(bringItems.count == NoteService.initialBringItemNames.count)
         #expect(bringItems.filter(\.isChecked).count == 1)
+    }
+
+    @Test func newestMemoHasTwoSamplePictures() throws {
+        // 写真の機能を見せるため、2 週間前のメモにだけ見本の絵を 2 枚付ける（段階 F3）。
+        let service = try seededService()
+        let memos = try service.memos()
+        let newest = try #require(memos.first { $0.visitDay == today.adding(days: -14) })
+
+        let photos = try service.photos(memoID: newest.id)
+        #expect(photos.count == 2)
+        #expect(photos.allSatisfy { UIImage(data: $0.imageData) != nil && UIImage(data: $0.thumbnailData) != nil })
+        // 小さい画像は、大きい画像より小さい（一覧で大きい画像を読み込まないため）。
+        #expect(photos.allSatisfy { $0.thumbnailData.count < $0.imageData.count })
+
+        for memo in memos where memo.id != newest.id {
+            #expect(try service.photos(memoID: memo.id).isEmpty)
+        }
     }
 
     @Test func preparingAgainDoesNotAddMore() throws {
