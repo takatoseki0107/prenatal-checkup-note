@@ -84,6 +84,12 @@ struct MemoSheetRulesTests {
         #expect(!MemoSheetRules.canSave(body: " \n ", includedQuestionCount: 0))
     }
 
+    @Test func aPhotoAloneIsEnoughToSave() {
+        // エコー写真だけ残したい日のために、写真だけでも保存できる（段階 E の決まり）。
+        #expect(MemoSheetRules.canSave(body: "", includedQuestionCount: 0, photoCount: 1))
+        #expect(!MemoSheetRules.canSave(body: "", includedQuestionCount: 0, photoCount: 0))
+    }
+
     // MARK: - 入口（R-20）
 
     @Test func showsTheEntryOnlyWhenThereIsSomethingToWrite() {

@@ -84,9 +84,9 @@ nonisolated enum MemoSheetRules {
         includedQuestionCount > 0 ? "メモと質問 \(includedQuestionCount) 件を保存" : "メモを保存"
     }
 
-    /// 保存できるか（R-12）。本文か「この健診で聞いたこと」のどちらかが要る。空白や改行だけの本文は空。
-    static func canSave(body: String, includedQuestionCount: Int) -> Bool {
-        InputText.normalized(body) != nil || includedQuestionCount > 0
+    /// 保存できるか（R-12）。本文・「この健診で聞いたこと」・写真のどれかが要る（写真は段階 E で足した）。空白や改行だけの本文は空。
+    static func canSave(body: String, includedQuestionCount: Int, photoCount: Int = 0) -> Bool {
+        InputText.normalized(body) != nil || includedQuestionCount > 0 || photoCount > 0
     }
 
     /// 「次の健診」の画面の下の、健診後メモの入口（R-20）。

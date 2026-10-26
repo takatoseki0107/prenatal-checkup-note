@@ -164,6 +164,25 @@ struct MemoPhotoTests {
         #expect(try service.memo(id: memoID)?.body == "")
     }
 
+    @Test func theStoreShowsTheDraftPhotos() throws {
+        // 画面は `NoteStore.memoDraftPhotos` を見て、書きかけの写真を並べる。足す・外すのたびに読み直す。
+        let temporary = try TemporaryStore()
+        let store = NoteStore(container: temporary.container, service: temporary.makeService())
+        store.perform { try $0.startMemoDraft(today: today, now: now) }
+        let draftID = try #require(store.memoDraft?.id)
+
+        let added = try #require(store.perform { try $0.addPhoto(photo(1), memoID: draftID, now: now) })
+        #expect(store.memoDraftPhotos.map(\.id) == [added])
+
+        store.perform { try $0.removePhoto(id: added) }
+        #expect(store.memoDraftPhotos.isEmpty)
+        guard case .removedPhoto(let snapshot)? = store.pendingUndo else {
+            Issue.record("写真を外したあとに、元に戻すがない")
+            return
+        }
+        #expect(snapshot.id == added)
+    }
+
     @Test func keepsTheOtherPhotosWhenAPhotoFails() throws {
         // 読み込めない写真は保存の形にできないので、足す前に止まる。ほかの写真とメモはそのまま（R-85）。
         let store = try TemporaryStore()
