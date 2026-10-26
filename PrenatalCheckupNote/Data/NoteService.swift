@@ -5,8 +5,10 @@ import SwiftData
 nonisolated enum NoteServiceError: Error, Equatable {
     /// 文が空（空白と改行だけを含む）。
     case emptyText
-    /// 本文も「この健診で聞いたこと」もない健診後メモ（R-12）。
+    /// 本文も「この健診で聞いたこと」も写真もない健診後メモ（R-12、段階 E で写真を足した）。
     case emptyMemo
+    /// 1 つのメモの写真が多すぎる（R-81、5 枚まで）。
+    case tooManyPhotos
     /// 指定の ID のデータがない。
     case notFound
     /// 保存に失敗した。変更はすべて保存前に戻した（S-01）。
@@ -53,6 +55,8 @@ nonisolated struct MemoSaveResult: Equatable, Sendable {
 final class NoteService {
     /// 初めて使うときに入れる持ち物（R-34）。
     static let initialBringItemNames = ["母子健康手帳", "保険証", "受診票"]
+    /// 1 つの健診後メモに付けられる写真の数（R-81）。
+    static let maxPhotosPerMemo = 5
 
     let context: ModelContext
     private let persist: (ModelContext) throws -> Void
@@ -211,7 +215,9 @@ final class NoteService {
 
         let body = InputText.normalized(input.body) ?? ""
         let included = try questions().filter { $0.isAsked && !input.excludedQuestionIDs.contains($0.id) }
-        guard !body.isEmpty || !included.isEmpty else {
+        // 写真は書きかけと同じ ID で持っているので、保存してもそのままこのメモの写真になる（付け替えない）。
+        let hasPhotos = try !photos(memoID: input.id).isEmpty
+        guard !body.isEmpty || !included.isEmpty || hasPhotos else {
             throw NoteServiceError.emptyMemo
         }
 
@@ -293,8 +299,8 @@ final class NoteService {
             normalizedItems[item.id] = (text, InputText.normalized(item.answer) ?? "")
         }
         let normalizedBody = InputText.normalized(body) ?? ""
-        // 本文も質問もないメモにはしない（R-12）。
-        guard !normalizedBody.isEmpty || !memo.items.isEmpty else {
+        // 本文も質問も写真もないメモにはしない（R-12）。
+        guard try !normalizedBody.isEmpty || !memo.items.isEmpty || !photos(memoID: id).isEmpty else {
             throw NoteServiceError.emptyMemo
         }
 
@@ -313,17 +319,80 @@ final class NoteService {
         pendingUndo = .editedMemo(snapshot)
     }
 
-    /// 健診後メモを削除する（R-19。確認は画面で行う）。メモの中の質問と答えも一緒に消える。
+    /// 健診後メモを削除する（R-19。確認は画面で行う）。メモの中の質問と答え、写真も一緒に消える。
     /// 元に戻せるのは、元に戻すの帯が出ている間だけ。
     func deleteMemo(id: UUID) throws {
         guard let memo = try memo(id: id) else {
             throw NoteServiceError.notFound
         }
         let snapshot = memo.snapshot
+        let memoPhotos = try photos(memoID: id)
+        let photoSnapshots = memoPhotos.map(\.snapshot)
         try perform {
             context.delete(memo)
+            for photo in memoPhotos {
+                context.delete(photo)
+            }
         }
-        pendingUndo = .deletedMemo(snapshot)
+        pendingUndo = .deletedMemo(snapshot, photos: photoSnapshots)
+    }
+
+    // MARK: - 写真
+
+    /// 健診後メモ（または書きかけ）の写真。並び順。
+    func photos(memoID: UUID) throws -> [MemoPhoto] {
+        try context.fetch(FetchDescriptor<MemoPhoto>(
+            predicate: #Predicate<MemoPhoto> { photo in photo.memoID == memoID },
+            sortBy: [SortDescriptor(\.sortOrder)]
+        ))
+    }
+
+    /// すべての写真。メモごとの枚数を数えるのに使う。
+    func allPhotos() throws -> [MemoPhoto] {
+        try context.fetch(FetchDescriptor<MemoPhoto>(sortBy: [SortDescriptor(\.sortOrder)]))
+    }
+
+    /// 写真を足す（R-80〜R-82）。足せるのは、保存したメモか、いまの書きかけ。5 枚までで、いちばん後ろに足す。
+    @discardableResult
+    func addPhoto(_ photo: PreparedPhoto, memoID: UUID, now: Date) throws -> UUID {
+        let isDraft = try memoDraft()?.id == memoID
+        guard try isDraft || memo(id: memoID) != nil else {
+            throw NoteServiceError.notFound
+        }
+        let existing = try photos(memoID: memoID)
+        guard existing.count < Self.maxPhotosPerMemo else {
+            throw NoteServiceError.tooManyPhotos
+        }
+        let nextOrder = (existing.map(\.sortOrder).max() ?? -1) + 1
+        return try perform { () throws -> UUID in
+            let model = MemoPhoto(
+                memoID: memoID,
+                imageData: photo.imageData,
+                thumbnailData: photo.thumbnailData,
+                sortOrder: nextOrder,
+                createdAt: now
+            )
+            context.insert(model)
+            return model.id
+        }
+    }
+
+    /// 写真を 1 枚外す（R-84）。元に戻すと、画像も一緒に戻る。
+    ///
+    /// 保存したメモの最後の中身（本文も質問もなく、写真がこの 1 枚だけ）なら外せない。空のメモを残さないため（R-12）。
+    func removePhoto(id: UUID) throws {
+        guard let photo = try context.fetch(FetchDescriptor<MemoPhoto>(predicate: #Predicate<MemoPhoto> { photo in photo.id == id })).first else {
+            throw NoteServiceError.notFound
+        }
+        if let memo = try memo(id: photo.memoID), memo.body.isEmpty, memo.items.isEmpty,
+           try photos(memoID: photo.memoID).count == 1 {
+            throw NoteServiceError.emptyMemo
+        }
+        let snapshot = photo.snapshot
+        try perform {
+            context.delete(photo)
+        }
+        pendingUndo = .removedPhoto(snapshot)
     }
 
     // MARK: - 次の健診と持ち物
@@ -514,8 +583,14 @@ final class NoteService {
                 }
                 profile.dueDateNumber = number
 
-            case .deletedMemo(let snapshot):
-                // 消したメモを、同じ ID のまま作り直す。質問と答えも戻す。
+            case .removedPhoto(let snapshot):
+                context.insert(MemoPhoto(snapshot))
+
+            case .deletedMemo(let snapshot, let photoSnapshots):
+                // 消したメモを、同じ ID のまま作り直す。質問と答え、写真も戻す。
+                for photo in photoSnapshots {
+                    context.insert(MemoPhoto(photo))
+                }
                 let memo = CheckupMemo(
                     id: snapshot.id,
                     visitDayNumber: snapshot.visitDayNumber,
@@ -591,10 +666,13 @@ final class NoteService {
         }
     }
 
-    /// 書きかけの健診後メモを捨てる（R-71。確認は画面で行う）。
+    /// 書きかけの健診後メモを捨てる（R-71。確認は画面で行う）。選んでいた写真も一緒に消す。
     func discardMemoDraft() throws {
         try perform {
             if let draft = try memoDraft() {
+                for photo in try photos(memoID: draft.id) {
+                    context.delete(photo)
+                }
                 context.delete(draft)
             }
         }

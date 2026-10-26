@@ -59,6 +59,16 @@ nonisolated struct CheckupMemoSnapshot: Equatable, Sendable {
     let items: [MemoItemSnapshot]
 }
 
+/// 写真 1 枚の値。元に戻すとき、画像も一緒に戻すために、画像のデータごと持つ（R-84）。
+nonisolated struct PhotoSnapshot: Equatable, Sendable {
+    let id: UUID
+    let memoID: UUID
+    let imageData: Data
+    let thumbnailData: Data
+    let sortOrder: Int
+    let createdAt: Date
+}
+
 /// 戻せる操作（直前の 1 回だけ。R-60）。
 nonisolated enum PendingUndo: Equatable, Sendable {
     /// 質問 1 件の削除（R-06）。
@@ -71,8 +81,10 @@ nonisolated enum PendingUndo: Equatable, Sendable {
     case removedBringItem(BringItemSnapshot)
     /// 過去の健診後メモを直した（R-18）。直す前の値を持つ。
     case editedMemo(CheckupMemoSnapshot)
-    /// 健診後メモを削除した（R-19）。帯が出ている間だけ戻せる。
-    case deletedMemo(CheckupMemoSnapshot)
+    /// 健診後メモを削除した（R-19）。帯が出ている間だけ戻せる。写真も一緒に戻す。
+    case deletedMemo(CheckupMemoSnapshot, photos: [PhotoSnapshot])
+    /// 写真を 1 枚外した（R-84）。画像ごと戻す。
+    case removedPhoto(PhotoSnapshot)
     /// 出産予定日を消した。消す前の予定日（`CalendarDay.number`）を持つ。
     case clearedDueDate(Int)
 }
@@ -126,6 +138,19 @@ extension MemoDraft {
             excludedQuestionIDs: excludedQuestionIDs,
             nextCheckupIDAtStart: nextCheckupIDAtStart,
             updatedAt: updatedAt
+        )
+    }
+}
+
+extension MemoPhoto {
+    var snapshot: PhotoSnapshot {
+        PhotoSnapshot(
+            id: id,
+            memoID: memoID,
+            imageData: imageData,
+            thumbnailData: thumbnailData,
+            sortOrder: sortOrder,
+            createdAt: createdAt
         )
     }
 }
