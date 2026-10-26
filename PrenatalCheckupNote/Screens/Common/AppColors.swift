@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// アプリの色（段階 F の見た目。見た目案 v3 の空色に、やわらかいピンクを少し足す）。
+/// アプリの色（段階 F の見た目。見た目案 v3 の空色に、やわらかいピンクと星の黄色を少し足す）。
 ///
 /// 色の値は `Assets.xcassets` に、ライトとダークの 2 つずつ置いている。
 /// 強調の色（ボタン・スイッチ・丸・タブ）は `AccentColor` で、アプリ全体に自動で効く。
@@ -10,8 +10,10 @@ enum AppColors {
     static let background = Color("AppBackground")
     /// 健診予定のカードの空色。
     static let skyCard = Color("SkyCard")
-    /// やわらかいピンク。星（大事な質問）と、今日の週数のハートに使う。
+    /// やわらかいピンク。今日の週数のハートに使う。
     static let pink = Color("AccentPink")
+    /// 星（大事な質問）の黄色。
+    static let star = Color("StarYellow")
 }
 
 /// アプリの字体（段階 F）。iPhone に最初から入っている丸い字体「ヒラギノ丸ゴ」を使う。

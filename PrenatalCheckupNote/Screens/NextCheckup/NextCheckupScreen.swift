@@ -189,7 +189,7 @@ private struct QuestionRow: View {
             } label: {
                 Image(systemName: question.isStarred ? "star.fill" : "star")
                     .font(.title3)
-                    .foregroundStyle(question.isStarred ? AppColors.pink : .secondary)
+                    .foregroundStyle(question.isStarred ? AppColors.star : .secondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(question.isStarred ? "星あり" : "星なし")
