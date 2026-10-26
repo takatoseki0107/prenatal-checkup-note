@@ -189,6 +189,19 @@ struct WriteMemoSheet: View {
         askedQuestions.filter { !excludedQuestionIDs.contains($0.id) }.count
     }
 
+    private var visitDayGuide: MemoSheetRules.VisitDayGuide {
+        MemoSheetRules.visitDayGuide(visitDay: visitDay, nextCheckupDay: store.nextCheckup?.day, today: today)
+    }
+
+    private var nextCheckupOutcome: MemoSheetRules.NextCheckupOutcome {
+        MemoSheetRules.nextCheckupOutcome(
+            visitDay: visitDay,
+            nextCheckupIDAtStart: store.memoDraft?.nextCheckupIDAtStart,
+            currentNextCheckupID: store.nextCheckup?.id,
+            currentNextCheckupDay: store.nextCheckup?.day
+        )
+    }
+
     /// 画面の内容が、まだ入力途中のメモとして保存できていないか。
     private var hasUnsavedInput: Bool {
         guard hasLoaded, !isFinished, let draft = store.memoDraft else {
