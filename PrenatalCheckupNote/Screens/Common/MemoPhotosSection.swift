@@ -56,7 +56,7 @@ struct MemoPhotosSection: View {
             }
             if failedCount > 0 {
                 Label("\(failedCount) 枚の写真を読み込めませんでした。ほかの写真とメモはそのままです。", systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
+                    .font(.maru(.footnote))
                     .foregroundStyle(.orange)
             }
             PhotosPicker(

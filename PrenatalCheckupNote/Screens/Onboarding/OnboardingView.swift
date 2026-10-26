@@ -44,7 +44,7 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(.bar)
+                .background(AppColors.background)
             }
         }
         // はじめにの上で起きた失敗は、はじめにの上で知らせる（ADR 0009）。

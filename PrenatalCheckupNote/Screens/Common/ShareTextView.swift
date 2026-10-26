@@ -11,7 +11,7 @@ struct ShareTextView: View {
         List {
             Section {
                 Text(text)
-                    .font(.callout)
+                    .font(.maru(.callout))
                     .textSelection(.enabled)
                     .padding(.vertical, 4)
             } footer: {
@@ -30,7 +30,7 @@ struct ShareTextView: View {
             .controlSize(.large)
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(.bar)
+            .background(AppColors.background)
         }
     }
 }

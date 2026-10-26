@@ -12,7 +12,7 @@ final class CoreFlowUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    /// 質問を追加 → 丸 → 健診後メモを保存 → これまでの健診で見る → 元に戻す。
+    /// 質問を追加 → 丸 → 健診後メモを保存 → 健診の記録で見る → 元に戻す。
     @MainActor
     func testAddAskSaveLookBackAndUndo() throws {
         let app = launch(resettingData: true)
@@ -37,8 +37,8 @@ final class CoreFlowUITests: XCTestCase {
         // 丸を付けた質問はメモに移り、一覧から外れる。
         XCTAssertTrue(element(labelContaining: "聞きたいこと（0件）", in: app).waitForExistence(timeout: timeout))
 
-        // これまでの健診で見る。
-        app.tabBars.buttons["これまでの健診"].tap()
+        // 健診の記録で見る。
+        app.tabBars.buttons["健診の記録"].tap()
         XCTAssertTrue(element(labelContaining: "様子見でよい", in: app).waitForExistence(timeout: timeout))
 
         // 元に戻すと、書いた内容のままメモのシートが開き直す（R-17）。
@@ -50,7 +50,7 @@ final class CoreFlowUITests: XCTestCase {
 
         // メモは消え、質問は丸付きで「聞きたいこと」に戻る。
         XCTAssertTrue(element(labelContaining: "まだ健診後メモはありません", in: app).waitForExistence(timeout: timeout))
-        app.tabBars.buttons["次の健診"].tap()
+        app.tabBars.buttons["健診予定"].tap()
         XCTAssertTrue(app.buttons["聞いた"].firstMatch.waitForExistence(timeout: timeout))
     }
 

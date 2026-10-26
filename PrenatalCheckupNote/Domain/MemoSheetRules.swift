@@ -17,7 +17,7 @@ nonisolated enum MemoSheetRules {
             case .none:
                 nil
             case .fromNextCheckup:
-                "「次の健診」の日付を入れています。違う日なら変えられます。"
+                "「健診予定」に入れた日付です。違う日なら変えられます。"
             case .future(let day, let isNextCheckupDay):
                 if isNextCheckupDay {
                     "次の健診（\(day.displayText)）はまだ先です。今日の受診のメモなら、日付を今日にしてください。"
@@ -89,7 +89,7 @@ nonisolated enum MemoSheetRules {
         InputText.normalized(body) != nil || includedQuestionCount > 0 || photoCount > 0
     }
 
-    /// 「次の健診」の画面の下の、健診後メモの入口（R-20）。
+    /// 「健診予定」の画面の下の、健診後メモの入口（R-20）。
     nonisolated enum Entry: Equatable {
         /// 出さない。
         case hidden

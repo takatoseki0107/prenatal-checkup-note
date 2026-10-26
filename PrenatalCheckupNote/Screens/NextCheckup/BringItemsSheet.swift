@@ -52,7 +52,7 @@ struct BringItemsSheet: View {
             .safeAreaInset(edge: .bottom) {
                 if store.pendingUndo != nil {
                     UndoBar()
-                        .background(.bar)
+                        .background(AppColors.background)
                 }
             }
             .animation(.default, value: store.pendingUndo)

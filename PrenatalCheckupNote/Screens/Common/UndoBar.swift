@@ -11,7 +11,7 @@ struct UndoBar: View {
         if let undo = store.pendingUndo {
             HStack {
                 Text(undo.message)
-                    .font(.subheadline)
+                    .font(.maru(.subheadline))
                 Spacer()
                 // iOS 26 では、帯の上の `.bordered` のボタンは背景がほとんど見えないので、塗りのあるボタンにする。
                 Button("元に戻す") {
