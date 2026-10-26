@@ -1,9 +1,10 @@
 import UIKit
 import UserNotifications
 
-/// iPhone からの知らせのうち、SwiftUI だけでは受け取れないものを受け取る。いまは、お知らせのことだけ。
+/// iPhone からの知らせのうち、SwiftUI だけでは受け取れないものを受け取る。お知らせのことと、起動の準備ができたときの設定。
 ///
-/// - お知らせを押された（R-46）：`NotificationTapRelay` に伝え、画面が「次の健診」を開く。
+/// - 起動の準備ができた：画面の上の題名を丸い字体にする（段階 F）。
+/// - お知らせを押された（R-46）：`NotificationTapRelay` に伝え、画面が「健診予定」を開く。
 /// - アプリを開いている最中に、お知らせの時刻になった：画面の上にも出す（出さないと、気づかないため）。
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(
@@ -12,6 +13,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     ) -> Bool {
         // お知らせを押されて起動したときにも受け取れるよう、起動の終わりまでに受け取り手を決めておく。
         UNUserNotificationCenter.current().delegate = self
+        // 画面の上の題名を丸い字体にする。画面ができる前の、ここで決める。
+        // App の init で決めると、UIKit の準備の前に触ることになり、アプリの強調の色（AccentColor）が読み込まれず、
+        // ダークモードでボタンが iPhone 標準の青になった（段階 F の画面の確認で見つかった）。
+        AppFonts.applyToNavigationBars()
         return true
     }
 
