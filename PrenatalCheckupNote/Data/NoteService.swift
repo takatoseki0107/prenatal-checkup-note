@@ -56,7 +56,8 @@ final class NoteService {
     /// 初めて使うときに入れる持ち物（R-34）。
     static let initialBringItemNames = ["母子健康手帳", "保険証", "受診票"]
     /// 1 つの健診後メモに付けられる写真の数（R-81）。
-    static let maxPhotosPerMemo = 5
+    /// エラーの文（メインアクターの外）からも読むので、`nonisolated` にする（ただの数なので、どこから読んでも安全）。
+    nonisolated static let maxPhotosPerMemo = 5
 
     let context: ModelContext
     private let persist: (ModelContext) throws -> Void
