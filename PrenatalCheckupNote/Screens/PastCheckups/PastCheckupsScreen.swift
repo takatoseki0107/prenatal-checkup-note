@@ -164,9 +164,12 @@ private struct MemoRow: View {
                 .lineLimit(typeSize.isAccessibilitySize ? 2 : 1)
             detailLayout {
                 Text("この健診で聞いたこと \(memo.items.count)件")
+                    // 一覧の中では 1 行に収めようとして「この健診で聞い…」と切れたので、折り返すようにする（段階 F2）。
+                    .fixedSize(horizontal: false, vertical: true)
                 if photoCount > 0 {
                     // 写真の印は、文字の中に入れて「写真 n枚」とくっつける。
                     Text("\(Image(systemName: "photo")) 写真 \(photoCount)枚")
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .font(.maru(.caption))
