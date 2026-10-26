@@ -16,6 +16,7 @@ struct DeveloperSection: View {
         @Bindable var settings = DeveloperSettings.shared
 
         Section {
+            Toggle("サンプルデータを表示する", isOn: $settings.showsSampleData)
             Toggle("保存を失敗させる", isOn: $settings.failsSaving)
             Toggle("お知らせの予約を失敗させる", isOn: $settings.failsReminderScheduling)
             // 前日の夜まで待たずに、お知らせが届くこと・押したときの動き（R-46）を確かめる。
@@ -35,7 +36,7 @@ struct DeveloperSection: View {
         } header: {
             Text("開発用")
         } footer: {
-            Text("「保存を失敗させる」をオンにすると、保存がすべて失敗します。失敗しても、入力した内容や保存済みのデータが消えないことを確かめるために使います。「お知らせの予約を失敗させる」をオンにすると、お知らせの予約が失敗します。どちらも、アプリを終了するとオフに戻ります。「1 分後に試しのお知らせ」は、本物と同じ文のお知らせを 1 分後に 1 回だけ届けます。次の健診のお知らせには影響しません。")
+            Text("「サンプルデータを表示する」をオンにすると、本当のデータとは別の場所に例のデータを入れて表示します。本当のデータとお知らせはそのままで、オフにすると戻ります。「保存を失敗させる」をオンにすると、保存がすべて失敗します。失敗しても、入力した内容や保存済みのデータが消えないことを確かめるために使います。「お知らせの予約を失敗させる」をオンにすると、お知らせの予約が失敗します。どれも、アプリを終了するとオフに戻ります。「1 分後に試しのお知らせ」は、本物と同じ文のお知らせを 1 分後に 1 回だけ届けます。次の健診のお知らせには影響しません。")
         }
         .notificationPermissionAlert(isPresented: $isShowingPermissionAlert)
     }
