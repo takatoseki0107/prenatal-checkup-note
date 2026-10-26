@@ -152,6 +152,7 @@ struct MemoDetailSheet: View {
                 Text("過去のメモを直しても、いま「聞きたいこと」で丸を付けている質問は、このメモに入りません。")
             }
         }
+        .appBackground()
     }
 
     // MARK: - 値
@@ -304,6 +305,7 @@ private struct MemoView: View {
                 }
             }
         }
+        .appBackground()
         .fullScreenCover(item: $viewing) { viewing in
             PhotoViewer(photos: photos, selection: viewing.id)
         }

@@ -19,6 +19,7 @@ struct PastCheckupsScreen: View {
                 memoListSection
             }
         }
+        .appBackground()
         .navigationTitle("これまでの健診")
         .searchable(text: $query, prompt: "メモを探す（例：むくみ 足）")
         .toolbar {

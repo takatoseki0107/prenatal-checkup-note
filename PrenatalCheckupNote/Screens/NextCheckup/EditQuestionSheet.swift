@@ -90,6 +90,7 @@ struct EditQuestionSheet: View {
                 Text("削除したあと、画面の下の「元に戻す」で戻せます。")
             }
         }
+        .appBackground()
     }
 
     private var question: Question? {

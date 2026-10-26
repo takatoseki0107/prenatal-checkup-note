@@ -77,6 +77,7 @@ struct NextCheckupSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("次の健診")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

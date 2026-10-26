@@ -18,6 +18,7 @@ struct ShareTextView: View {
                 Text("この文章を、メッセージやメモなどに送れます。写真は入りません。送る前に、中身を確かめてください。")
             }
         }
+        .appBackground()
         .navigationTitle("共有する文章")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {

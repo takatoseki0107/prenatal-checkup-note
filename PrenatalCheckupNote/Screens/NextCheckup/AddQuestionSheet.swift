@@ -37,6 +37,7 @@ struct AddQuestionSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("質問を追加")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -50,6 +50,7 @@ struct NextCheckupScreen: View {
                 }
             }
         }
+        .appBackground()
         .navigationTitle("次の健診")
         .toolbar {
             // 聞きたいことの一覧を文章で共有する（段階 D）。質問がなければ押せない。
@@ -191,7 +192,9 @@ private struct QuestionRow: View {
 /// 次の健診のカード（要件定義 v0.4 の 4 章）。
 ///
 /// 日付が入っているときは、日時と「変更」、持ち物 n / m と「見る」。
-/// 日付がないときは、点線の「＋ 次の健診の日付を入れる」と、その下に案内（R-20 の入口に日付が要るため）。
+/// 日付がないときも、同じ空色のカードの形で「日付はまだ入っていません」と［日付を入れる］を出す（段階 F）。
+/// 入れる前と後でカードの場所と形が変わらないので、入れたあとに画面ががらっと変わらない。
+/// 入れると何ができるか（お知らせ・健診後メモ）もカードの中で伝える（R-20 の入口に日付が要るため）。
 private struct NextCheckupCard: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -229,28 +232,28 @@ private struct NextCheckupCard: View {
                     ReminderRow(input: input)
                 }
             }
+            .listRowBackground(AppColors.skyCard)
         } else {
             Section {
-                Button {
-                    router.sheet = .nextCheckup
-                } label: {
-                    Text("＋ 次の健診の日付を入れる")
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("次の健診", systemImage: "calendar")
                         .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                                .foregroundStyle(.secondary)
-                        }
-                        .contentShape(Rectangle())
+                    Text("日付はまだ入っていません。入れると、前日の夜にお知らせでき、健診後メモも書けます。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        router.sheet = .nextCheckup
+                    } label: {
+                        Text("日付を入れる")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-            } footer: {
-                Text("健診の日付を入れると、健診後メモを書けます。")
+                .padding(.vertical, 6)
             }
+            .listRowBackground(AppColors.skyCard)
         }
     }
 

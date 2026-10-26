@@ -38,6 +38,7 @@ struct BringItemsSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("持ち物")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

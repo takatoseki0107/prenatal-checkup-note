@@ -45,6 +45,7 @@ struct WriteMemoSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("健診後メモ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
