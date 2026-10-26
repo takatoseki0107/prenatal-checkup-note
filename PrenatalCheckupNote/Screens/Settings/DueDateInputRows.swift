@@ -22,7 +22,7 @@ struct DueDateInputRows: View {
             Button("予定日がわからないとき：いまの週数から計算する") {
                 entry.mode = .weeks
             }
-            .font(.subheadline)
+            .font(.maru(.subheadline))
 
         case .weeks:
             Picker("いまの妊娠週数", selection: $entry.weeks) {
@@ -38,12 +38,12 @@ struct DueDateInputRows: View {
             }
             if let dueDate = entry.dueDate(today: today) {
                 Text("出産予定日は \(dueDate.displayText) になります")
-                    .font(.subheadline)
+                    .font(.maru(.subheadline))
             }
             Button("出産予定日を直接入れる") {
                 entry.mode = .date
             }
-            .font(.subheadline)
+            .font(.maru(.subheadline))
         }
     }
 

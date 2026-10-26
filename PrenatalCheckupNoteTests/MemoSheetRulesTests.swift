@@ -11,7 +11,7 @@ struct MemoSheetRulesTests {
     @Test func saysTheVisitDayCameFromTheNextCheckup() {
         let guide = MemoSheetRules.visitDayGuide(visitDay: today, nextCheckupDay: today, today: today)
         #expect(guide == .fromNextCheckup)
-        #expect(guide.message == "「次の健診」の日付を入れています。違う日なら変えられます。")
+        #expect(guide.message == "「健診予定」に入れた日付です。違う日なら変えられます。")
     }
 
     @Test func warnsWhenTheNextCheckupIsStillAhead() {

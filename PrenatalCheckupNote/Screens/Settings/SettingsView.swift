@@ -39,6 +39,7 @@ struct SettingsView: View {
                 DeveloperSection()
                 #endif
             }
+            .appBackground()
             .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

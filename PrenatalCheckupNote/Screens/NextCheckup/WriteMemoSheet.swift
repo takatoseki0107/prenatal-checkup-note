@@ -45,6 +45,7 @@ struct WriteMemoSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("健診後メモ")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -100,7 +101,7 @@ struct WriteMemoSheet: View {
                 .environment(\.timeZone, Calendar.japan.timeZone)
             if let message = visitDayGuide.message {
                 Text(message)
-                    .font(.footnote)
+                    .font(.maru(.footnote))
                     .foregroundStyle(.secondary)
                 if case .future(_, _) = visitDayGuide {
                     Button("今日にする") {
@@ -148,7 +149,7 @@ struct WriteMemoSheet: View {
             }
             if let message = nextCheckupOutcome.message {
                 Text(message)
-                    .font(.footnote)
+                    .font(.maru(.footnote))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -168,7 +169,7 @@ struct WriteMemoSheet: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(.bar)
+        .background(AppColors.background)
     }
 
     // MARK: - 決まり
@@ -284,12 +285,12 @@ private struct AskedQuestionRow: View {
                     .strikethrough(!isIncluded)
                 if !question.answer.isEmpty {
                     Text("先生の答え：\(question.answer)")
-                        .font(.footnote)
+                        .font(.maru(.footnote))
                         .foregroundStyle(.secondary)
                 }
                 if !isIncluded {
                     Text("メモに入れず、「聞きたいこと」に残します")
-                        .font(.caption)
+                        .font(.maru(.caption))
                         .foregroundStyle(.secondary)
                 }
             }

@@ -11,13 +11,14 @@ struct ShareTextView: View {
         List {
             Section {
                 Text(text)
-                    .font(.callout)
+                    .font(.maru(.callout))
                     .textSelection(.enabled)
                     .padding(.vertical, 4)
             } footer: {
                 Text("この文章を、メッセージやメモなどに送れます。写真は入りません。送る前に、中身を確かめてください。")
             }
         }
+        .appBackground()
         .navigationTitle("共有する文章")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
@@ -29,7 +30,7 @@ struct ShareTextView: View {
             .controlSize(.large)
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(.bar)
+            .background(AppColors.background)
         }
     }
 }

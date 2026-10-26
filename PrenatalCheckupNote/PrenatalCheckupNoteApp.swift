@@ -13,6 +13,11 @@ struct PrenatalCheckupNoteApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var launch = AppLaunch.start()
 
+    init() {
+        // 画面の上の題名も丸い字体にする（段階 F）。
+        AppFonts.applyToNavigationBars()
+    }
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -34,6 +39,8 @@ struct PrenatalCheckupNoteApp: App {
             // （例：「Oct 25, 2026」ではなく「2026/10/25」）。日付の計算は、別に `Calendar.japan` で固定している（R-90）。
             // シートもこの下で開くので、同じ書き方になる。
             .environment(\.locale, Locale(identifier: "ja_JP"))
+            // 文字はアプリ全体で丸い字体にする（段階 F）。見出しなど役割のある文字は、それぞれ `.maru(...)` で決めている。
+            .font(.maru(.body))
             #if DEBUG
             // 開発用の「サンプルデータを表示する」を切り替えたら、その保存場所で開き直す（段階 D）。
             .onChange(of: DeveloperSettings.shared.showsSampleData) { _, showsSampleData in

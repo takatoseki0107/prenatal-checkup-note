@@ -20,7 +20,7 @@ struct PhotoThumbnail: View {
                 VStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle")
                     Text("読み込めませんでした")
-                        .font(.caption2)
+                        .font(.maru(.caption2))
                         .multilineTextAlignment(.center)
                 }
                 .foregroundStyle(.secondary)

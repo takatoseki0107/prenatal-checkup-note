@@ -77,6 +77,7 @@ struct NextCheckupSheet: View {
                     }
                 }
             }
+            .appBackground()
             .navigationTitle("次の健診")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -133,11 +134,11 @@ struct NextCheckupSheet: View {
 
             if availableSlots.isEmpty {
                 Text(ReminderTimeRule.unavailableMessage)
-                    .font(.footnote)
+                    .font(.maru(.footnote))
             } else if isReminderOn {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("お知らせの時刻（前日）")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.maru(.subheadline).weight(.semibold))
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                         ForEach(availableSlots, id: \.self) { slot in
                             SlotButton(slot: slot, isSelected: slot == reminderSlot) {
@@ -148,7 +149,7 @@ struct NextCheckupSheet: View {
                     }
                     if let reminderNotice {
                         Text(reminderNotice)
-                            .font(.footnote.weight(.semibold))
+                            .font(.maru(.footnote).weight(.semibold))
                             .foregroundStyle(Color.accentColor)
                     }
                 }

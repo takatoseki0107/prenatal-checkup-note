@@ -8,7 +8,9 @@
 import SwiftData
 import SwiftUI
 
-/// アプリの一番下の画面。下の 2 つのタブ「次の健診」「これまでの健診」と、シートを受け持つ（要件定義 v0.4 の 4 章）。
+/// アプリの一番下の画面。下の 2 つのタブ「健診予定」「健診の記録」と、シートを受け持つ（要件定義 v0.4 の 4 章）。
+///
+/// タブの名前は、段階 F で「次の健診」「これまでの健診」から変えた（画面の名前とカードの見出しで同じ言葉がくり返されるため）。
 ///
 /// シートはここで 1 か所にまとめて開く。失敗の知らせは、シートを開いていないときだけここで出し、
 /// 開いているときはシートの側で出す（`noteErrorAlert`）。
@@ -22,12 +24,12 @@ struct ContentView: View {
         @Bindable var router = router
 
         TabView(selection: $router.selectedTab) {
-            Tab("次の健診", systemImage: "list.bullet.clipboard", value: AppRouter.Tab.next) {
+            Tab("健診予定", systemImage: "list.bullet.clipboard", value: AppRouter.Tab.next) {
                 NavigationStack {
                     NextCheckupScreen()
                 }
             }
-            Tab("これまでの健診", systemImage: "book.closed", value: AppRouter.Tab.past) {
+            Tab("健診の記録", systemImage: "book.closed", value: AppRouter.Tab.past) {
                 NavigationStack {
                     PastCheckupsScreen()
                 }
@@ -64,8 +66,8 @@ struct ContentView: View {
                 store.reminders?.requestSync()
             }
         }
-        // お知らせを押されたら「次の健診」を開く（R-46）。押されて起動したときは、画面ができた時点で印が置いてあるので、最初にも見る。
-        // シートを開いていたときは閉じない。直している途中の内容が消えないように。シートを閉じると「次の健診」が見える。
+        // お知らせを押されたら「健診予定」のタブを開く（R-46）。押されて起動したときは、画面ができた時点で印が置いてあるので、最初にも見る。
+        // シートを開いていたときは閉じない。直している途中の内容が消えないように。シートを閉じると「健診予定」が見える。
         .onChange(of: notificationTaps.opensNextCheckup, initial: true) { _, opens in
             if opens {
                 router.selectedTab = .next

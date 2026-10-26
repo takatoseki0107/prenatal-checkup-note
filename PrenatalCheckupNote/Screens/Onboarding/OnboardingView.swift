@@ -22,6 +22,7 @@ struct OnboardingView: View {
                     Text("入れなくても、すべての機能を使えます。あとから右上の設定で入れたり、直したりできます。記録はこの iPhone の中だけに保存します。")
                 }
             }
+            .appBackground()
             .navigationTitle("はじめに")
             .safeAreaInset(edge: .bottom) {
                 VStack(spacing: 8) {
@@ -43,7 +44,7 @@ struct OnboardingView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(.bar)
+                .background(AppColors.background)
             }
         }
         // はじめにの上で起きた失敗は、はじめにの上で知らせる（ADR 0009）。

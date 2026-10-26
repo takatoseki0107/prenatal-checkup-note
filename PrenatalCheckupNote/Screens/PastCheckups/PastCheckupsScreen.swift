@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// タブ 2「これまでの健診」（要件定義 v0.4 の 4 章）。
+/// タブ 2「健診の記録」（要件定義 v0.4 の 4 章。段階 F で「これまでの健診」から名前を変えた）。
 ///
 /// 健診後メモの一覧（新しい順）。行を押すと、見る・直す・削除するシートを開く（B5）。
 /// 出産予定日があれば、各行に記録したときの予定日で計算した週数を出す（R-52）。
@@ -19,7 +19,8 @@ struct PastCheckupsScreen: View {
                 memoListSection
             }
         }
-        .navigationTitle("これまでの健診")
+        .appBackground()
+        .navigationTitle("健診の記録")
         .searchable(text: $query, prompt: "メモを探す（例：むくみ 足）")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -33,7 +34,7 @@ struct PastCheckupsScreen: View {
         .safeAreaInset(edge: .bottom) {
             if store.pendingUndo != nil {
                 UndoBar()
-                    .background(.bar)
+                    .background(AppColors.background)
             }
         }
         .animation(.default, value: store.pendingUndo)
@@ -91,7 +92,7 @@ struct PastCheckupsScreen: View {
                 .buttonStyle(.plain)
             }
         } footer: {
-            Text("健診が終わったら、「次の健診」の画面の「健診後メモを書く」から書きます（次の健診の日付を入れると出ます）。メモを押すと、見返したり直したりできます。")
+            Text("健診が終わったら、「健診予定」の画面の「健診後メモを書く」から書きます（健診の日付を入れると出ます）。メモを押すと、見返したり直したりできます。")
         }
     }
 }
@@ -104,9 +105,9 @@ private struct SearchResultRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(memo.visitDay?.displayText ?? "日付なし")の健診")
-                .font(.headline)
+                .font(.maru(.headline))
             Text(snippetText)
-                .font(.subheadline)
+                .font(.maru(.subheadline))
                 .lineLimit(3)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -143,14 +144,14 @@ private struct MemoRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("\(memo.visitDay?.displayText ?? "日付なし")の健診")
-                .font(.headline)
+                .font(.maru(.headline))
             if let ageText = GestationalAgeDisplay.text(for: memo.gestationalAgeAtVisit, isShown: isAgeShown) {
                 Text(ageText)
-                    .font(.caption)
+                    .font(.maru(.caption))
                     .foregroundStyle(.secondary)
             }
             Text(preview)
-                .font(.subheadline)
+                .font(.maru(.subheadline))
                 .foregroundStyle(memo.body.isEmpty ? .secondary : .primary)
                 .lineLimit(1)
             HStack(spacing: 12) {
@@ -160,7 +161,7 @@ private struct MemoRow: View {
                     Text("\(Image(systemName: "photo")) 写真 \(photoCount)枚")
                 }
             }
-            .font(.caption)
+            .font(.maru(.caption))
             .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

@@ -77,7 +77,7 @@ struct MemoDetailSheet: View {
             .safeAreaInset(edge: .bottom) {
                 if showsUndoBar {
                     UndoBar()
-                        .background(.bar)
+                        .background(AppColors.background)
                 }
             }
             .animation(.default, value: store.pendingUndo)
@@ -132,11 +132,11 @@ struct MemoDetailSheet: View {
                     ForEach($items) { $item in
                         VStack(alignment: .leading, spacing: 8) {
                             Text("質問\(item.number)")
-                                .font(.caption)
+                                .font(.maru(.caption))
                                 .foregroundStyle(.secondary)
                             TextField("質問", text: $item.questionText, axis: .vertical)
                             Text("先生の答え（任意）")
-                                .font(.caption)
+                                .font(.maru(.caption))
                                 .foregroundStyle(.secondary)
                             TextField("先生の答え", text: $item.answer, axis: .vertical)
                         }
@@ -152,6 +152,7 @@ struct MemoDetailSheet: View {
                 Text("過去のメモを直しても、いま「聞きたいこと」で丸を付けている質問は、このメモに入りません。")
             }
         }
+        .appBackground()
     }
 
     // MARK: - 値
@@ -237,7 +238,7 @@ struct MemoDetailSheet: View {
     private func delete() {
         let result: Void? = store.perform { try $0.deleteMemo(id: memoID) }
         if result != nil {
-            // 閉じたあと、「これまでの健診」の画面の帯の「元に戻す」で戻せる（R-19）。
+            // 閉じたあと、「健診の記録」の画面の帯の「元に戻す」で戻せる（R-19）。
             isClosing = true
             dismiss()
         }
@@ -287,9 +288,9 @@ private struct MemoView: View {
                     ForEach(memo.sortedItems) { item in
                         VStack(alignment: .leading, spacing: 4) {
                             Text(item.questionText)
-                                .font(.headline)
+                                .font(.maru(.headline))
                             Text(item.answer.isEmpty ? "答えのメモなし" : "先生の答え：\(item.answer)")
-                                .font(.subheadline)
+                                .font(.maru(.subheadline))
                                 .foregroundStyle(item.answer.isEmpty ? .secondary : .primary)
                         }
                         .padding(.vertical, 2)
@@ -304,6 +305,7 @@ private struct MemoView: View {
                 }
             }
         }
+        .appBackground()
         .fullScreenCover(item: $viewing) { viewing in
             PhotoViewer(photos: photos, selection: viewing.id)
         }

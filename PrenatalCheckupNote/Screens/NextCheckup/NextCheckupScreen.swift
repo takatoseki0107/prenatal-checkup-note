@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// タブ 1「次の健診」（要件定義 v0.4 の 4 章）。
+/// タブ 1「健診予定」（要件定義 v0.4 の 4 章。段階 F で「次の健診」から名前を変えた）。
 ///
 /// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
 /// 行を押すと質問のシートを開く。出産予定日があれば、いちばん上に今日の妊娠週数を出す（R-51）。
@@ -13,15 +13,22 @@ struct NextCheckupScreen: View {
         List {
             if let todayAgeText = store.gestationalAgeText(on: CalendarDay(.now)) {
                 Section {
-                    Text("今日　\(todayAgeText)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(.background))
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
+                    HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .foregroundStyle(AppColors.pink)
+                            .accessibilityHidden(true)
+                        Text("今日は \(todayAgeText)")
+                    }
+                    .font(.maru(.subheadline).weight(.semibold))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(.background))
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
+                // 今日の週数と、すぐ下のカードの間を詰める。
+                .listSectionSpacing(.compact)
             }
 
             NextCheckupCard()
@@ -50,7 +57,8 @@ struct NextCheckupScreen: View {
                 }
             }
         }
-        .navigationTitle("次の健診")
+        .appBackground()
+        .navigationTitle("健診予定")
         .toolbar {
             // 聞きたいことの一覧を文章で共有する（段階 D）。質問がなければ押せない。
             ToolbarItem(placement: .topBarTrailing) {
@@ -73,7 +81,7 @@ struct NextCheckupScreen: View {
             VStack(spacing: 0) {
                 UndoBar()
                 // 「健診後メモを書く」を出さないときは、「＋ 質問を追加」を横いっぱいにする（R-20）。
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     Button {
                         router.sheet = .addQuestion
                     } label: {
@@ -90,13 +98,15 @@ struct NextCheckupScreen: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                // 押しやすいように大きめにして、左右の余白も詰める（段階 F）。
+                .controlSize(.extraLarge)
+                .font(.maru(.headline))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .padding(.horizontal)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 8)
             }
-            .background(.bar)
+            .background(AppColors.background)
             .animation(.default, value: store.pendingUndo)
         }
     }
@@ -157,12 +167,12 @@ private struct QuestionRow: View {
                         .foregroundStyle(question.isAsked ? .secondary : .primary)
                     if !question.note.isEmpty {
                         Text(question.note)
-                            .font(.footnote)
+                            .font(.maru(.footnote))
                             .foregroundStyle(.secondary)
                     }
                     if !question.answer.isEmpty {
                         Text("先生の答え：\(question.answer)")
-                            .font(.footnote)
+                            .font(.maru(.footnote))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -179,7 +189,7 @@ private struct QuestionRow: View {
             } label: {
                 Image(systemName: question.isStarred ? "star.fill" : "star")
                     .font(.title3)
-                    .foregroundStyle(question.isStarred ? Color.orange : .secondary)
+                    .foregroundStyle(question.isStarred ? AppColors.star : .secondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(question.isStarred ? "星あり" : "星なし")
@@ -191,7 +201,9 @@ private struct QuestionRow: View {
 /// 次の健診のカード（要件定義 v0.4 の 4 章）。
 ///
 /// 日付が入っているときは、日時と「変更」、持ち物 n / m と「見る」。
-/// 日付がないときは、点線の「＋ 次の健診の日付を入れる」と、その下に案内（R-20 の入口に日付が要るため）。
+/// 日付がないときも、同じ空色のカードの形で「まだ日付が入っていません」と［日付を入れる］を出す（段階 F）。
+/// 入れる前と後でカードの場所と形が変わらないので、入れたあとに画面ががらっと変わらない。
+/// 入れると何ができるか（お知らせ・健診後メモ）もカードの中で伝える（R-20 の入口に日付が要るため）。
 private struct NextCheckupCard: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -202,10 +214,10 @@ private struct NextCheckupCard: View {
                 HStack(spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
-                            .font(.headline)
+                            .font(.maru(.headline))
                         if let ageText = store.gestationalAgeText(on: day) {
                             Text("\(ageText)の健診")
-                                .font(.subheadline)
+                                .font(.maru(.subheadline))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -229,28 +241,36 @@ private struct NextCheckupCard: View {
                     ReminderRow(input: input)
                 }
             }
+            .listRowBackground(AppColors.skyCard)
         } else {
             Section {
-                Button {
-                    router.sheet = .nextCheckup
-                } label: {
-                    Text("＋ 次の健診の日付を入れる")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
-                                .foregroundStyle(.secondary)
-                        }
-                        .contentShape(Rectangle())
+                VStack(alignment: .leading, spacing: 10) {
+                    // 画面の名前（健診予定）と同じ言葉をくり返さず、いまの状態を見出しにする。
+                    HStack(spacing: 10) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(.background))
+                            .accessibilityHidden(true)
+                        Text("まだ日付が入っていません")
+                            .font(.maru(.headline))
+                    }
+                    Text("入れると、前日の夜にお知らせでき、健診後メモも書けます。")
+                        .font(.maru(.subheadline))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button {
+                        router.sheet = .nextCheckup
+                    } label: {
+                        Text("日付を入れる")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(Color.accentColor)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets())
-            } footer: {
-                Text("健診の日付を入れると、健診後メモを書けます。")
+                .padding(.vertical, 6)
             }
+            .listRowBackground(AppColors.skyCard)
         }
     }
 
@@ -274,11 +294,11 @@ private struct ReminderRow: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(status.text)
-                    .font(.subheadline)
+                    .font(.maru(.subheadline))
                 // 予約に失敗したら隠さずに知らせる（R-45）。次に開いたとき・前面に戻ったときに、もう一度予約する（S-06）。
                 if isScheduleFailureShown(status) {
                     Text("お知らせを予約できませんでした。アプリを開き直すと、もう一度予約します。")
-                        .font(.caption)
+                        .font(.maru(.caption))
                         .foregroundStyle(.orange)
                 }
             }
