@@ -11,6 +11,8 @@ final class NoteStore {
     private(set) var questions: [Question] = []
     private(set) var memos: [CheckupMemo] = []
     private(set) var memoDraft: MemoDraft?
+    /// 書きかけの健診後メモに選んだ写真（段階 E）。並び順。
+    private(set) var memoDraftPhotos: [MemoPhoto] = []
     /// 書きかけの新しい質問（R-72）。
     private(set) var questionDraft: QuestionDraft?
     /// 次の健診。日付が入っていなければ `nil`。
@@ -76,6 +78,7 @@ final class NoteStore {
             questions = try service.questions()
             memos = try service.memos()
             memoDraft = try service.memoDraft()
+            memoDraftPhotos = try memoDraft.map { try service.photos(memoID: $0.id) } ?? []
             questionDraft = try service.questionDraft()
             nextCheckup = try service.nextCheckup()
             bringItems = try service.bringItems()

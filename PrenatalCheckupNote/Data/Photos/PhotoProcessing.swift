@@ -37,6 +37,12 @@ nonisolated enum PhotoProcessing {
         )
     }
 
+    /// `prepare` を、画面のスレッドとは別のところで行う。大きい写真を縮める間も、画面が固まらないようにするため。
+    @concurrent
+    static func prepareInBackground(_ data: Data) async throws -> PreparedPhoto {
+        try prepare(data)
+    }
+
     /// 長い辺を `maxPixelSize` までに縮めた JPEG を作る。元が小さければ、大きくはしない。
     private static func jpeg(from source: CGImageSource, maxPixelSize: Int) throws -> Data {
         let options: [CFString: Any] = [

@@ -1,10 +1,12 @@
+import PhotosUI
 import SwiftUI
 
 /// 健診後メモを書くシート（要件定義 v0.4 の 4 章「健診後メモを書く」、5.2）。
 ///
 /// 受診日・本文・「この健診で聞いたこと」を書いて保存する。保存すると、メモに入れた質問は「聞きたいこと」から外れる。
 /// 書いている途中の内容は、入力途中のメモとして残す（R-70）。入力が 1 秒ほど止まったら保存し、「閉じる」でも保存を試す。
-/// 破棄するのは「入力途中の内容を破棄」を押して確認したときだけ（R-71）。写真は段階 E で足す。
+/// 破棄するのは「入力途中の内容を破棄」を押して確認したときだけ（R-71）。
+/// 写真（段階 E）は、選んだらすぐアプリの中に写して入力途中のメモに残す。閉じても、起動し直しても残る。
 struct WriteMemoSheet: View {
     @Environment(NoteStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -18,6 +20,12 @@ struct WriteMemoSheet: View {
     /// 保存した・破棄したあとか。閉じる途中に、待っていた保存が入力途中のメモを作り直さないため。
     @State private var isFinished = false
     @State private var isConfirmingDiscard = false
+    /// 写真の選択画面で選んだもの。受け取ったら、すぐ空に戻す。
+    @State private var pickedItems: [PhotosPickerItem] = []
+    /// 読み込んでいる写真の数。0 でなければ保存できない（段階 E の決まり）。
+    @State private var loadingPhotoCount = 0
+    /// 直前に選んだ写真のうち、読み込めなかった数（R-85）。
+    @State private var failedPhotoCount = 0
 
     var body: some View {
         NavigationStack {
@@ -29,6 +37,7 @@ struct WriteMemoSheet: View {
                         // 画面のテストで、この欄を見つけるための名前。
                         .accessibilityIdentifier("memoBodyField")
                 }
+                photosSection
                 askedQuestionsSection
                 Section {
                     Button("入力途中の内容を破棄", role: .destructive) {
@@ -63,17 +72,29 @@ struct WriteMemoSheet: View {
                 }
                 saveDraft()
             }
+            // 選んだ写真を受け取ったら、読み込んで写しを保存する。選択はすぐ空に戻し、同じ写真をもう一度選べるようにする。
+            .onChange(of: pickedItems) { _, items in
+                guard !items.isEmpty else {
+                    return
+                }
+                pickedItems = []
+                Task {
+                    await addPhotos(items)
+                }
+            }
             .alert("入力途中の内容を破棄しますか？", isPresented: $isConfirmingDiscard) {
                 Button("編集を続ける", role: .cancel) {}
                 Button("破棄", role: .destructive) {
                     discardDraft()
                 }
             } message: {
-                Text("書いた文は消えます。丸を付けた質問は「聞きたいこと」に残ります。")
+                Text(store.memoDraftPhotos.isEmpty
+                    ? "書いた文は消えます。丸を付けた質問は「聞きたいこと」に残ります。"
+                    : "書いた文と選んだ写真は消えます。丸を付けた質問は「聞きたいこと」に残ります。")
             }
         }
-        // まだ保存できていない入力があるときは、下にスワイプしても閉じない。
-        .interactiveDismissDisabled(hasUnsavedInput)
+        // まだ保存できていない入力があるとき・写真を読み込んでいるときは、下にスワイプしても閉じない。
+        .interactiveDismissDisabled(hasUnsavedInput || loadingPhotoCount > 0)
         // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
         .noteErrorAlert(store)
     }
@@ -97,6 +118,59 @@ struct WriteMemoSheet: View {
                     }
                 }
             }
+        }
+    }
+
+    /// 写真（段階 E、R-80〜R-85）。小さい画像を横に並べ、× で 1 枚ずつ外せる（元に戻せる）。5 枚まで。
+    private var photosSection: some View {
+        Section {
+            if !store.memoDraftPhotos.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(Array(store.memoDraftPhotos.enumerated()), id: \.element.id) { offset, photo in
+                            PhotoThumbnail(thumbnailData: photo.thumbnailData, number: offset + 1)
+                                .overlay(alignment: .topTrailing) {
+                                    Button {
+                                        removePhoto(id: photo.id)
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.title3)
+                                            .symbolRenderingMode(.palette)
+                                            .foregroundStyle(.white, .black.opacity(0.6))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .padding(4)
+                                    .accessibilityLabel("写真 \(offset + 1) を外す")
+                                }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            if loadingPhotoCount > 0 {
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("写真を読み込んでいます")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if failedPhotoCount > 0 {
+                Label("\(failedPhotoCount) 枚の写真を読み込めませんでした。ほかの写真とメモはそのままです。", systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+            PhotosPicker(
+                selection: $pickedItems,
+                maxSelectionCount: max(remainingPhotoCount, 1),
+                matching: .images
+            ) {
+                Label("写真を足す", systemImage: "photo.badge.plus")
+            }
+            .disabled(remainingPhotoCount == 0 || loadingPhotoCount > 0)
+        } header: {
+            Text("写真（\(NoteService.maxPhotosPerMemo) 枚まで）")
+        } footer: {
+            Text("エコー写真などを付けられます。アプリの中に写しを保存するので、写真アプリで消してもメモの写真は残ります。文章で共有するときは入りません。")
         }
     }
 
@@ -128,9 +202,13 @@ struct WriteMemoSheet: View {
         }
     }
 
-    /// 画面の下の、次の健診がどうなるかの 1 行（R-16）と保存ボタン（R-14）。
+    /// 画面の下の、写真を外したときの元に戻すの帯、次の健診がどうなるかの 1 行（R-16）と保存ボタン（R-14）。
     private var saveBar: some View {
         VStack(spacing: 8) {
+            // 写真を外したときだけ、ここに帯を出す（ほかの操作の帯は、後ろの画面で出す）。
+            if case .removedPhoto? = store.pendingUndo {
+                UndoBar()
+            }
             if let message = nextCheckupOutcome.message {
                 Text(message)
                     .font(.footnote)
@@ -145,8 +223,11 @@ struct WriteMemoSheet: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            // 本文も「この健診で聞いたこと」もないときは保存できない（R-12）。
-            .disabled(!MemoSheetRules.canSave(body: memoBody, includedQuestionCount: includedQuestionCount))
+            // 本文も「この健診で聞いたこと」も写真もないときは保存できない（R-12）。写真を読み込んでいる間も保存できない。
+            .disabled(
+                !MemoSheetRules.canSave(body: memoBody, includedQuestionCount: includedQuestionCount, photoCount: store.memoDraftPhotos.count)
+                    || loadingPhotoCount > 0
+            )
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
@@ -169,6 +250,11 @@ struct WriteMemoSheet: View {
 
     private var includedQuestionCount: Int {
         askedQuestions.filter { !excludedQuestionIDs.contains($0.id) }.count
+    }
+
+    /// あと何枚足せるか。
+    private var remainingPhotoCount: Int {
+        max(0, NoteService.maxPhotosPerMemo - store.memoDraftPhotos.count)
     }
 
     private var visitDayGuide: MemoSheetRules.VisitDayGuide {
@@ -241,6 +327,37 @@ struct WriteMemoSheet: View {
             isFinished = true
             dismiss()
         }
+    }
+
+    /// 選んだ写真を 1 枚ずつ読み込み、縮めた写しを入力途中のメモに足す。読み込めなかった写真は数えて知らせる（R-85）。
+    private func addPhotos(_ items: [PhotosPickerItem]) async {
+        // 一度に足せるのは、残りの枚数まで（選択画面でも絞っている）。
+        let accepted = Array(items.prefix(remainingPhotoCount))
+        failedPhotoCount = 0
+        loadingPhotoCount += accepted.count
+        for item in accepted {
+            defer {
+                loadingPhotoCount -= 1
+            }
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else {
+                    throw PhotoUnreadableError()
+                }
+                // 縮める処理は重いので、画面のスレッドとは別のところで行う。
+                let prepared = try await PhotoProcessing.prepareInBackground(data)
+                guard let draftID = store.memoDraft?.id else {
+                    return
+                }
+                store.perform { try $0.addPhoto(prepared, memoID: draftID, now: .now) }
+            } catch {
+                failedPhotoCount += 1
+            }
+        }
+    }
+
+    /// 写真を 1 枚外す。下の帯の「元に戻す」で戻せる（R-84）。
+    private func removePhoto(id: UUID) {
+        store.perform { try $0.removePhoto(id: id) }
     }
 
     private func discardDraft() {
