@@ -13,6 +13,8 @@ enum AppDataStore {
         PregnancyProfile.self,
         MemoDraft.self,
         QuestionDraft.self,
+        // 段階 E で足した。足すだけなので、いまのデータはそのまま開ける（自動の移行）。
+        MemoPhoto.self,
     ])
 
     /// 指定の場所に保存するコンテナ。iCloud とは同期しない（1 章）。

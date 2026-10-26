@@ -110,6 +110,44 @@ final class MemoItem {
     }
 }
 
+/// 健診後メモの写真（段階 E、R-80〜R-85）。1 つのメモに 5 枚まで。
+///
+/// 写真は、メモではなく「メモの ID」で持ち主を指す。書きかけの健診後メモ（`MemoDraft`）の ID は、保存したメモの ID と同じなので、
+/// 書きかけに足した写真は、保存してもそのままメモの写真になる（付け替えが要らない）。
+/// 書きかけを捨てたとき・メモを削除したときは、同じ ID の写真を窓口で一緒に消す。
+@Model
+final class MemoPhoto {
+    @Attribute(.unique) var id: UUID
+    /// 持ち主の健診後メモ（または書きかけ）の ID。
+    var memoID: UUID
+    /// 大きく見るための画像（JPEG、長い辺 2,400 ピクセルまで）。大きいので、データベースの外のファイルに置く。
+    @Attribute(.externalStorage) var imageData: Data
+    /// 一覧に並べる小さい画像（JPEG、長い辺 300 ピクセルほど）。
+    var thumbnailData: Data
+    /// 並び。小さいほど前。
+    var sortOrder: Int
+    var createdAt: Date
+
+    init(id: UUID = UUID(), memoID: UUID, imageData: Data, thumbnailData: Data, sortOrder: Int, createdAt: Date) {
+        self.id = id
+        self.memoID = memoID
+        self.imageData = imageData
+        self.thumbnailData = thumbnailData
+        self.sortOrder = sortOrder
+        self.createdAt = createdAt
+    }
+
+    /// 元に戻すときに、消す前の値から作り直す（同じ ID）。
+    init(_ snapshot: PhotoSnapshot) {
+        self.id = snapshot.id
+        self.memoID = snapshot.memoID
+        self.imageData = snapshot.imageData
+        self.thumbnailData = snapshot.thumbnailData
+        self.sortOrder = snapshot.sortOrder
+        self.createdAt = snapshot.createdAt
+    }
+}
+
 /// 次の健診。0 件か 1 件。
 @Model
 final class NextCheckup {
