@@ -1,6 +1,6 @@
 # 妊婦健診ノート（仮称）
 
-> 開発中です。実際に使う妻の反応を受けて、要件定義を簡単版（v0.4）に作り直しました（[ADR 0005](docs/adr/0005-simplify-to-v0.4.md)）。v0.3 の試作はタグ `v0.3-prototype` に残しています。段階 A（保存の土台）、段階 B（画面）、段階 C（お知らせ）、段階 D（検索・共有・サンプルデータ）まで作り、確かめました（[段階 B](docs/verification/stage-b.md)、[段階 C](docs/verification/stage-c.md)、[段階 D](docs/verification/stage-d.md)）。最初に、無料の個人チームで実機に入れて必要な機能が動くことを確かめました（[結果](docs/verification/device-check.md)）。
+> 開発中です。実際に使う妻の反応を受けて、要件定義を簡単版（v0.4）に作り直しました（[ADR 0005](docs/adr/0005-simplify-to-v0.4.md)）。v0.3 の試作はタグ `v0.3-prototype` に残しています。段階 A（保存の土台）、段階 B（画面）、段階 C（お知らせ）、段階 D（検索・共有・サンプルデータ）、段階 E（健診後メモの写真）まで作り、確かめました（[段階 B](docs/verification/stage-b.md)、[段階 C](docs/verification/stage-c.md)、[段階 D](docs/verification/stage-d.md)、[段階 E](docs/verification/stage-e.md)）。最初に、無料の個人チームで実機に入れて必要な機能が動くことを確かめました（[結果](docs/verification/device-check.md)）。
 
 妊婦健診で聞きたいことを書き留め、診察では一覧を見ながら聞き、先生の答えと説明を「健診後メモ」に残して、あとで見返せる iPhone アプリです。次の健診の日付・持ち物・前日の夜のお知らせも扱います。データは iPhone の中に保存し、アプリ独自のサーバーへの送信やクラウド同期はしません。
 
