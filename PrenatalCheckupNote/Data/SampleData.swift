@@ -5,6 +5,7 @@ import SwiftData
 ///
 /// 本当のデータとは別の保存場所（`AppDataStore.makeSampleContainer`）に入れる。本当のデータとお知らせには触れない。
 /// 日付は今日から数えて作るので、いつ見せても「今日は妊娠 24 週 3 日、次の健診は 2 週間後」になる。
+/// 2 週間前のメモには、コードで描いた見本の絵を 2 枚付ける（段階 F3、`SampleImages`）。本当の写真は使わない。
 enum SampleData {
     /// 今日の妊娠週数が 24 週 3 日になる出産予定日（今日から 109 日後。280 − 171 = 109）。
     static let daysUntilDueDate = 109
@@ -56,6 +57,7 @@ enum SampleData {
                 ]
             ),
         ]
+        var newestMemoID: UUID?
         for memo in memos {
             let model = CheckupMemo(
                 id: UUID(),
@@ -65,10 +67,28 @@ enum SampleData {
                 createdAt: now
             )
             context.insert(model)
+            if newestMemoID == nil {
+                newestMemoID = model.id
+            }
             for (offset, item) in memo.items.enumerated() {
                 let memoItem = MemoItem(questionText: item.question, answer: item.answer, note: item.note, sortOrder: offset)
                 context.insert(memoItem)
                 memoItem.memo = model
+            }
+        }
+
+        // 2 週間前のメモに、見本の絵を 2 枚付ける（段階 F3）。紹介動画で写真の機能を見せるため。
+        // 本当の写真と同じ道筋（PhotoProcessing）で、大きい画像と小さい画像を作る。
+        if let newestMemoID {
+            for (offset, data) in [SampleImages.picture(), SampleImages.handout()].enumerated() {
+                let photo = try PhotoProcessing.prepare(data)
+                context.insert(MemoPhoto(
+                    memoID: newestMemoID,
+                    imageData: photo.imageData,
+                    thumbnailData: photo.thumbnailData,
+                    sortOrder: offset,
+                    createdAt: now
+                ))
             }
         }
 
