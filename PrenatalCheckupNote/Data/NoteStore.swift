@@ -142,7 +142,9 @@ extension NoteServiceError {
         case .emptyText:
             "文が空です。"
         case .emptyMemo:
-            "本文か「この健診で聞いたこと」を入れてください。"
+            "本文・「この健診で聞いたこと」・写真のどれかを入れてください。"
+        case .tooManyPhotos:
+            "写真は 1 つのメモに \(NoteService.maxPhotosPerMemo) 枚までです。"
         case .notFound:
             "見つかりませんでした。画面を開き直してください。"
         case .saveFailed:
