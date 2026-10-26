@@ -156,7 +156,8 @@ private struct MemoRow: View {
             HStack(spacing: 12) {
                 Text("この健診で聞いたこと \(memo.items.count)件")
                 if photoCount > 0 {
-                    Label("写真 \(photoCount)枚", systemImage: "photo")
+                    // 写真の印は、文字の中に入れて「写真 n枚」とくっつける。
+                    Text("\(Image(systemName: "photo")) 写真 \(photoCount)枚")
                 }
             }
             .font(.caption)
@@ -164,6 +165,9 @@ private struct MemoRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        // メモとメモの間の区切り線は、行の左はしから引く。
+        // 指定しないと、行の中の文字の位置に合わせて引かれ、写真の印があると左が欠けた（E3 の画面の確認で見つかった）。
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
     }
 
     /// 本文の 1 行目。本文がなければ、そう書く。
