@@ -269,6 +269,92 @@ final class MemoDraft {
     }
 }
 
+/// やること（要件定義 v0.4 の 5.10、R-100〜R-110）。先生に言われた申請や、産院への連絡など、健診と健診の間にすること。何件でも。
+///
+/// 期限は、選んだときの日付をそのまま `CalendarDay.number` で持つ（R-102、ADR 0012）。あとで次の健診の日付を変えても動かさない。
+/// 完了は 2 段階（R-104）：丸を押すと `isChecked`（緑のチェック、その場に残る）→「完了にする」で `completedAt` に日時を入れる。
+@Model
+final class TodoItem {
+    @Attribute(.unique) var id: UUID
+    var title: String
+    /// 補足。空でもよい。
+    var note: String
+    /// 期限の日（`CalendarDay.number`）。期限なしなら `nil`。
+    var dueDayNumber: Int?
+    /// 大事な印（星）。同じ見出しの中で先に並ぶ（R-103）。
+    var isStarred: Bool
+    /// 緑のチェック（完了の 1 段階目）。完了にするまで、一覧のその場に残る。
+    var isChecked: Bool
+    /// 完了にした日時。完了していなければ `nil`。
+    var completedAt: Date?
+    /// 健診後メモから足したとき、そのメモの受診日（`CalendarDay.number`）。「◯月◯日の健診で」と出す（R-107）。
+    var originVisitDayNumber: Int?
+    /// 足した日時。同じ見出しの中の並び（足した順）に使う。
+    var createdAt: Date
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        note: String = "",
+        dueDay: CalendarDay? = nil,
+        isStarred: Bool = false,
+        isChecked: Bool = false,
+        completedAt: Date? = nil,
+        originVisitDay: CalendarDay? = nil,
+        createdAt: Date
+    ) {
+        self.id = id
+        self.title = title
+        self.note = note
+        self.dueDayNumber = dueDay?.number
+        self.isStarred = isStarred
+        self.isChecked = isChecked
+        self.completedAt = completedAt
+        self.originVisitDayNumber = originVisitDay?.number
+        self.createdAt = createdAt
+    }
+
+    /// 元に戻すときに、消す前の値から作り直す（同じ ID）。
+    init(_ snapshot: TodoSnapshot) {
+        self.id = snapshot.id
+        self.title = snapshot.title
+        self.note = snapshot.note
+        self.dueDayNumber = snapshot.dueDayNumber
+        self.isStarred = snapshot.isStarred
+        self.isChecked = snapshot.isChecked
+        self.completedAt = snapshot.completedAt
+        self.originVisitDayNumber = snapshot.originVisitDayNumber
+        self.createdAt = snapshot.createdAt
+    }
+
+    var dueDay: CalendarDay? {
+        dueDayNumber.flatMap { CalendarDay(number: $0) }
+    }
+
+    var originVisitDay: CalendarDay? {
+        originVisitDayNumber.flatMap { CalendarDay(number: $0) }
+    }
+
+    var isCompleted: Bool {
+        completedAt != nil
+    }
+
+    /// 並べ方や数え方の決まり（`TodoList`）に渡す値。
+    var listEntry: TodoList.Entry {
+        TodoList.Entry(
+            id: id,
+            title: title,
+            note: note,
+            dueDay: dueDay,
+            isStarred: isStarred,
+            isChecked: isChecked,
+            completedAt: completedAt,
+            originVisitDay: originVisitDay,
+            createdAt: createdAt
+        )
+    }
+}
+
 /// 書きかけの質問（新しく足す質問だけ）。0 件か 1 件。要件定義 v0.4 R-72。
 @Model
 final class QuestionDraft {

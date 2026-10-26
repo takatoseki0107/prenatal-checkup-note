@@ -19,6 +19,8 @@ final class NoteStore {
     private(set) var nextCheckup: NextCheckup?
     /// 持ち物の品目（R-34）。
     private(set) var bringItems: [BringItem] = []
+    /// やること（5.10）。完了したものも含む、足した順。並べ方は `TodoList` で決める。
+    private(set) var todos: [TodoItem] = []
     /// 出産予定日。入れていなければ `nil`。
     private(set) var dueDate: CalendarDay?
     /// 「妊娠週数を表示する」（R-53）。
@@ -90,6 +92,7 @@ final class NoteStore {
             questionDraft = try service.questionDraft()
             nextCheckup = try service.nextCheckup()
             bringItems = try service.bringItems()
+            todos = try service.todos()
             let profile = try service.profile()
             dueDate = profile?.dueDateNumber.flatMap { CalendarDay(number: $0) }
             showsGestationalAge = profile?.showsGestationalAge ?? true

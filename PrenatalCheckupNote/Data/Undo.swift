@@ -69,6 +69,19 @@ nonisolated struct PhotoSnapshot: Equatable, Sendable {
     let createdAt: Date
 }
 
+/// やること 1 件の値（R-105、R-109）。
+nonisolated struct TodoSnapshot: Equatable, Sendable {
+    let id: UUID
+    let title: String
+    let note: String
+    let dueDayNumber: Int?
+    let isStarred: Bool
+    let isChecked: Bool
+    let completedAt: Date?
+    let originVisitDayNumber: Int?
+    let createdAt: Date
+}
+
 /// 戻せる操作（直前の 1 回だけ。R-60）。
 nonisolated enum PendingUndo: Equatable, Sendable {
     /// 質問 1 件の削除（R-06）。
@@ -87,6 +100,10 @@ nonisolated enum PendingUndo: Equatable, Sendable {
     case removedPhoto(PhotoSnapshot)
     /// 出産予定日を消した。消す前の予定日（`CalendarDay.number`）を持つ。
     case clearedDueDate(Int)
+    /// やることを 1 件削除した（R-105）。
+    case deletedTodo(TodoSnapshot)
+    /// チェックしたやることを完了にした（R-104）。戻すと、完了を取り消して、緑のチェックを付けた状態に戻す。
+    case completedTodos(ids: [UUID])
 }
 
 nonisolated struct SavedMemoUndo: Equatable, Sendable {
@@ -150,6 +167,22 @@ extension MemoPhoto {
             imageData: imageData,
             thumbnailData: thumbnailData,
             sortOrder: sortOrder,
+            createdAt: createdAt
+        )
+    }
+}
+
+extension TodoItem {
+    var snapshot: TodoSnapshot {
+        TodoSnapshot(
+            id: id,
+            title: title,
+            note: note,
+            dueDayNumber: dueDayNumber,
+            isStarred: isStarred,
+            isChecked: isChecked,
+            completedAt: completedAt,
+            originVisitDayNumber: originVisitDayNumber,
             createdAt: createdAt
         )
     }
