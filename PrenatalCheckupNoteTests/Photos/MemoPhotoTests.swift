@@ -183,6 +183,22 @@ struct MemoPhotoTests {
         #expect(snapshot.id == added)
     }
 
+    @Test func theStoreShowsPhotosForEachMemo() throws {
+        // 「これまでの健診」の写真の枚数と、見る画面の写真は、メモの ID ごとにまとめた写真から出す。
+        let temporary = try TemporaryStore()
+        let store = NoteStore(container: temporary.container, service: temporary.makeService())
+        store.perform { try $0.startMemoDraft(today: today, now: now) }
+        let draftID = try #require(store.memoDraft?.id)
+        store.perform { try $0.addPhoto(photo(1), memoID: draftID, now: now) }
+        store.perform { try $0.addPhoto(photo(2), memoID: draftID, now: now) }
+
+        let memoID = try #require(store.perform { try $0.saveMemo(try $0.memoInputFromDraft(), now: now) }?.memoID)
+
+        #expect(store.memoDraftPhotos.isEmpty)
+        #expect(store.photos(forMemo: memoID).map(\.thumbnailData) == [Data([1]), Data([2])])
+        #expect(store.photos(forMemo: UUID()).isEmpty)
+    }
+
     @Test func keepsTheOtherPhotosWhenAPhotoFails() throws {
         // 読み込めない写真は保存の形にできないので、足す前に止まる。ほかの写真とメモはそのまま（R-85）。
         let store = try TemporaryStore()

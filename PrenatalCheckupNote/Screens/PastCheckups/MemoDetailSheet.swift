@@ -4,6 +4,7 @@ import SwiftUI
 ///
 /// 開くと「見る」。右上の「編集」で「健診後メモを直す」に変わる。直すのは「保存」ボタン式で、書きかけは残さない（R-72）。
 /// 直したら・削除したら、元に戻すの帯で戻せる。
+/// 写真（段階 E）は、見る画面で小さく並べ、押すと大きく出す。直す画面では、足す・外すとすぐ保存する（元に戻せる）。
 struct MemoDetailSheet: View {
     let memoID: UUID
 
@@ -18,6 +19,8 @@ struct MemoDetailSheet: View {
     @State private var isClosing = false
     @State private var isConfirmingCancel = false
     @State private var isConfirmingDelete = false
+    /// 直す画面で、読み込んでいる写真の数。0 でなければ保存できない。
+    @State private var loadingPhotoCount = 0
 
     var body: some View {
         NavigationStack {
@@ -26,7 +29,7 @@ struct MemoDetailSheet: View {
                     if isEditing {
                         editForm
                     } else {
-                        MemoView(memo: memo, isAgeShown: store.showsGestationalAge)
+                        MemoView(memo: memo, photos: store.photos(forMemo: memo.id), isAgeShown: store.showsGestationalAge)
                     }
                 } else if !isClosing {
                     ContentUnavailableView(
@@ -53,7 +56,7 @@ struct MemoDetailSheet: View {
                         Button("保存") {
                             save()
                         }
-                        .disabled(!canSave || !hasChanges)
+                        .disabled(!canSave || !hasChanges || loadingPhotoCount > 0)
                     }
                 } else {
                     ToolbarItem(placement: .cancellationAction) {
@@ -70,8 +73,9 @@ struct MemoDetailSheet: View {
                 }
             }
             // 直したあとの元に戻すの帯は、シートの上にも出す（後ろの画面の帯はシートに隠れるため）。
+            // 直す画面では、写真を外したときだけ出す。
             .safeAreaInset(edge: .bottom) {
-                if !isEditing, store.pendingUndo != nil {
+                if showsUndoBar {
                     UndoBar()
                         .background(.bar)
                 }
@@ -95,10 +99,10 @@ struct MemoDetailSheet: View {
                 Text(deleteMessage)
             }
         }
-        // 「健診後メモを直す」の間は、変更があってもなくても、下にスワイプでは閉じない。抜けるのは「キャンセル」か「保存」。
+        // 「健診後メモを直す」の間は、変更があってもなくても、下にスワイプでは閉じない。写真を読み込んでいる間も閉じない。抜けるのは「キャンセル」か「保存」。
         // 変更があるときだけ止める形だと、日本語の変換を確定する前の文字がまだ変更に数えられず、
         // そのすきにスワイプで閉じられて、直しかけの内容が消えた（B5 の画面の確認で見つかった）。
-        .interactiveDismissDisabled(isEditing)
+        .interactiveDismissDisabled(isEditing || loadingPhotoCount > 0)
         // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
         .noteErrorAlert(store)
     }
@@ -117,6 +121,12 @@ struct MemoDetailSheet: View {
                 TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
                     .lineLimit(4...)
             }
+            MemoPhotosSection(
+                memoID: memoID,
+                photos: store.photos(forMemo: memoID),
+                loadingCount: $loadingPhotoCount,
+                footer: "写真は、足す・外すとすぐ保存されます（「キャンセル」でも戻りません）。外した写真は、下の「元に戻す」で戻せます。"
+            )
             if !items.isEmpty {
                 Section("この健診で聞いたこと") {
                     ForEach($items) { $item in
@@ -154,16 +164,30 @@ struct MemoDetailSheet: View {
         "\(memo?.visitDay?.displayText ?? "")の健診"
     }
 
+    /// 削除の確認の文。消えるもの（質問の数・写真の枚数）を示す（R-19）。
     private var deleteMessage: String {
         let date = memo?.visitDay?.displayText ?? ""
         let count = memo?.items.count ?? 0
-        return "\(date)の健診後メモを削除します。先生の話のメモと、この健診で聞いたこと（\(count)件）と答えが、すべて消えます。"
+        let photoCount = store.photos(forMemo: memoID).count
+        let photos = photoCount > 0 ? "、写真（\(photoCount)枚）" : ""
+        return "\(date)の健診後メモを削除します。先生の話のメモと、この健診で聞いたこと（\(count)件）と答え\(photos)が、すべて消えます。"
     }
 
-    /// 保存できるか。質問の文は必須（空白だけも空）。本文も質問もないメモにはしない（R-12）。
+    /// 保存できるか。質問の文は必須（空白だけも空）。本文も質問も写真もないメモにはしない（R-12）。
     private var canSave: Bool {
         items.allSatisfy { InputText.normalized($0.questionText) != nil }
-            && MemoSheetRules.canSave(body: memoBody, includedQuestionCount: items.count)
+            && MemoSheetRules.canSave(body: memoBody, includedQuestionCount: items.count, photoCount: store.photos(forMemo: memoID).count)
+    }
+
+    /// 元に戻すの帯を出すか。見る画面ではいつも、直す画面では写真を外したときだけ。
+    private var showsUndoBar: Bool {
+        guard let undo = store.pendingUndo else {
+            return false
+        }
+        if case .removedPhoto = undo {
+            return true
+        }
+        return !isEditing
     }
 
     /// 保存されているメモと、画面の内容が違うか。
@@ -220,11 +244,15 @@ struct MemoDetailSheet: View {
     }
 }
 
-/// 健診後メモを見る画面（R-18 の「見る」）。いちばん下から、文章で共有できる（段階 D）。
+/// 健診後メモを見る画面（R-18 の「見る」）。写真は小さく並べ、押すと大きく出す（段階 E）。いちばん下から、文章で共有できる（段階 D）。
 private struct MemoView: View {
     let memo: CheckupMemo
+    let photos: [MemoPhoto]
     /// 「妊娠週数を表示する」。オフなら、共有の文章にも週数を入れない。
     let isAgeShown: Bool
+
+    /// 大きく出している写真。出していなければ `nil`。
+    @State private var viewing: ViewingPhoto?
 
     var body: some View {
         List {
@@ -232,6 +260,26 @@ private struct MemoView: View {
                 Section("先生から聞いたこと・次までにすること") {
                     Text(memo.body)
                         .textSelection(.enabled)
+                }
+            }
+            if !photos.isEmpty {
+                Section {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                        ForEach(Array(photos.enumerated()), id: \.element.id) { offset, photo in
+                            Button {
+                                viewing = ViewingPhoto(id: photo.id)
+                            } label: {
+                                PhotoThumbnail(thumbnailData: photo.thumbnailData, number: offset + 1, size: 96)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("押すと大きく表示します")
+                        }
+                    }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("写真（\(photos.count)枚）")
+                } footer: {
+                    Text("押すと大きく表示します。指で広げると拡大できます。")
                 }
             }
             if !memo.items.isEmpty {
@@ -256,9 +304,12 @@ private struct MemoView: View {
                 }
             }
         }
+        .fullScreenCover(item: $viewing) { viewing in
+            PhotoViewer(photos: photos, selection: viewing.id)
+        }
     }
 
-    /// 共有する文章。週数は「妊娠週数を表示する」がオンのときだけ入れる。
+    /// 共有する文章。週数は「妊娠週数を表示する」がオンのときだけ入れる。写真は入れない（R-86）。
     private var shareText: String {
         var title = "\(memo.visitDay?.displayText ?? "日付なし")の健診"
         if let ageText = GestationalAgeDisplay.text(for: memo.gestationalAgeAtVisit, isShown: isAgeShown) {
@@ -279,4 +330,9 @@ private struct EditableItem: Identifiable {
     let number: Int
     var questionText: String
     var answer: String
+}
+
+/// 大きく出す写真の ID。`fullScreenCover(item:)` に渡すため。
+private struct ViewingPhoto: Identifiable {
+    let id: UUID
 }

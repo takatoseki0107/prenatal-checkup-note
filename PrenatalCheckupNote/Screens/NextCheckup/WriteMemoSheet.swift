@@ -1,4 +1,3 @@
-import PhotosUI
 import SwiftUI
 
 /// 健診後メモを書くシート（要件定義 v0.4 の 4 章「健診後メモを書く」、5.2）。
@@ -20,12 +19,8 @@ struct WriteMemoSheet: View {
     /// 保存した・破棄したあとか。閉じる途中に、待っていた保存が入力途中のメモを作り直さないため。
     @State private var isFinished = false
     @State private var isConfirmingDiscard = false
-    /// 写真の選択画面で選んだもの。受け取ったら、すぐ空に戻す。
-    @State private var pickedItems: [PhotosPickerItem] = []
     /// 読み込んでいる写真の数。0 でなければ保存できない（段階 E の決まり）。
     @State private var loadingPhotoCount = 0
-    /// 直前に選んだ写真のうち、読み込めなかった数（R-85）。
-    @State private var failedPhotoCount = 0
 
     var body: some View {
         NavigationStack {
@@ -37,7 +32,12 @@ struct WriteMemoSheet: View {
                         // 画面のテストで、この欄を見つけるための名前。
                         .accessibilityIdentifier("memoBodyField")
                 }
-                photosSection
+                MemoPhotosSection(
+                    memoID: store.memoDraft?.id,
+                    photos: store.memoDraftPhotos,
+                    loadingCount: $loadingPhotoCount,
+                    footer: "エコー写真などを付けられます。アプリの中に写しを保存するので、写真アプリで消してもメモの写真は残ります。文章で共有するときは入りません。"
+                )
                 askedQuestionsSection
                 Section {
                     Button("入力途中の内容を破棄", role: .destructive) {
@@ -71,16 +71,6 @@ struct WriteMemoSheet: View {
                     return
                 }
                 saveDraft()
-            }
-            // 選んだ写真を受け取ったら、読み込んで写しを保存する。選択はすぐ空に戻し、同じ写真をもう一度選べるようにする。
-            .onChange(of: pickedItems) { _, items in
-                guard !items.isEmpty else {
-                    return
-                }
-                pickedItems = []
-                Task {
-                    await addPhotos(items)
-                }
             }
             .alert("入力途中の内容を破棄しますか？", isPresented: $isConfirmingDiscard) {
                 Button("編集を続ける", role: .cancel) {}
@@ -118,59 +108,6 @@ struct WriteMemoSheet: View {
                     }
                 }
             }
-        }
-    }
-
-    /// 写真（段階 E、R-80〜R-85）。小さい画像を横に並べ、× で 1 枚ずつ外せる（元に戻せる）。5 枚まで。
-    private var photosSection: some View {
-        Section {
-            if !store.memoDraftPhotos.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(Array(store.memoDraftPhotos.enumerated()), id: \.element.id) { offset, photo in
-                            PhotoThumbnail(thumbnailData: photo.thumbnailData, number: offset + 1)
-                                .overlay(alignment: .topTrailing) {
-                                    Button {
-                                        removePhoto(id: photo.id)
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.title3)
-                                            .symbolRenderingMode(.palette)
-                                            .foregroundStyle(.white, .black.opacity(0.6))
-                                    }
-                                    .buttonStyle(.plain)
-                                    .padding(4)
-                                    .accessibilityLabel("写真 \(offset + 1) を外す")
-                                }
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            if loadingPhotoCount > 0 {
-                HStack(spacing: 8) {
-                    ProgressView()
-                    Text("写真を読み込んでいます")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            if failedPhotoCount > 0 {
-                Label("\(failedPhotoCount) 枚の写真を読み込めませんでした。ほかの写真とメモはそのままです。", systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-                    .foregroundStyle(.orange)
-            }
-            PhotosPicker(
-                selection: $pickedItems,
-                maxSelectionCount: max(remainingPhotoCount, 1),
-                matching: .images
-            ) {
-                Label("写真を足す", systemImage: "photo.badge.plus")
-            }
-            .disabled(remainingPhotoCount == 0 || loadingPhotoCount > 0)
-        } header: {
-            Text("写真（\(NoteService.maxPhotosPerMemo) 枚まで）")
-        } footer: {
-            Text("エコー写真などを付けられます。アプリの中に写しを保存するので、写真アプリで消してもメモの写真は残ります。文章で共有するときは入りません。")
         }
     }
 
@@ -252,24 +189,6 @@ struct WriteMemoSheet: View {
         askedQuestions.filter { !excludedQuestionIDs.contains($0.id) }.count
     }
 
-    /// あと何枚足せるか。
-    private var remainingPhotoCount: Int {
-        max(0, NoteService.maxPhotosPerMemo - store.memoDraftPhotos.count)
-    }
-
-    private var visitDayGuide: MemoSheetRules.VisitDayGuide {
-        MemoSheetRules.visitDayGuide(visitDay: visitDay, nextCheckupDay: store.nextCheckup?.day, today: today)
-    }
-
-    private var nextCheckupOutcome: MemoSheetRules.NextCheckupOutcome {
-        MemoSheetRules.nextCheckupOutcome(
-            visitDay: visitDay,
-            nextCheckupIDAtStart: store.memoDraft?.nextCheckupIDAtStart,
-            currentNextCheckupID: store.nextCheckup?.id,
-            currentNextCheckupDay: store.nextCheckup?.day
-        )
-    }
-
     /// 画面の内容が、まだ入力途中のメモとして保存できていないか。
     private var hasUnsavedInput: Bool {
         guard hasLoaded, !isFinished, let draft = store.memoDraft else {
@@ -327,37 +246,6 @@ struct WriteMemoSheet: View {
             isFinished = true
             dismiss()
         }
-    }
-
-    /// 選んだ写真を 1 枚ずつ読み込み、縮めた写しを入力途中のメモに足す。読み込めなかった写真は数えて知らせる（R-85）。
-    private func addPhotos(_ items: [PhotosPickerItem]) async {
-        // 一度に足せるのは、残りの枚数まで（選択画面でも絞っている）。
-        let accepted = Array(items.prefix(remainingPhotoCount))
-        failedPhotoCount = 0
-        loadingPhotoCount += accepted.count
-        for item in accepted {
-            defer {
-                loadingPhotoCount -= 1
-            }
-            do {
-                guard let data = try await item.loadTransferable(type: Data.self) else {
-                    throw PhotoUnreadableError()
-                }
-                // 縮める処理は重いので、画面のスレッドとは別のところで行う。
-                let prepared = try await PhotoProcessing.prepareInBackground(data)
-                guard let draftID = store.memoDraft?.id else {
-                    return
-                }
-                store.perform { try $0.addPhoto(prepared, memoID: draftID, now: .now) }
-            } catch {
-                failedPhotoCount += 1
-            }
-        }
-    }
-
-    /// 写真を 1 枚外す。下の帯の「元に戻す」で戻せる（R-84）。
-    private func removePhoto(id: UUID) {
-        store.perform { try $0.removePhoto(id: id) }
     }
 
     private func discardDraft() {
