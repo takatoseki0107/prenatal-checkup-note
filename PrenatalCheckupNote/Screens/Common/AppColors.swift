@@ -42,8 +42,11 @@ enum AppFonts {
         }
     }
 
-    /// 画面の上の題名（「健診予定」など）も丸い字体にする。題名は UIKit が出しているので、UIKit の側で決める。
-    static func applyToNavigationBars() {
+    /// 画面の上の題名（「健診予定」など）とタブの文字も丸い字体にする。どちらも UIKit が出しているので、UIKit の側で決める。
+    ///
+    /// UIKit の準備ができてから（`AppDelegate` の起動の終わり）呼ぶこと。早すぎると強調の色が読み込まれない（段階 F1）。
+    /// タブの文字は、iOS の版によっては受け付けられず、標準の字体のままになることがある。
+    static func applyToSystemBars() {
         guard let base = UIFont(name: maruName, size: 17) else {
             return
         }
@@ -51,6 +54,9 @@ enum AppFonts {
         let inlineTitle = UIFontMetrics(forTextStyle: .headline).scaledFont(for: base.withSize(baseSize(.headline)))
         UINavigationBar.appearance().largeTitleTextAttributes = [.font: largeTitle]
         UINavigationBar.appearance().titleTextAttributes = [.font: inlineTitle]
+        let tabTitle = base.withSize(10)
+        UITabBarItem.appearance().setTitleTextAttributes([.font: tabTitle], for: .normal)
+        UITabBarItem.appearance().setTitleTextAttributes([.font: tabTitle], for: .selected)
     }
 }
 

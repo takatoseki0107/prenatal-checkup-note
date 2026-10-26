@@ -53,6 +53,8 @@ struct BringItemsSheet: View {
                 if store.pendingUndo != nil {
                     UndoBar()
                         .background(AppColors.background)
+                        // 下の帯は、文字サイズ最大でも画面の多くを占めないよう、大きさに上限を付ける（段階 F2）。
+                        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
                 }
             }
             .animation(.default, value: store.pendingUndo)
@@ -85,6 +87,8 @@ private struct BringItemRow: View {
                 HStack(spacing: 12) {
                     Image(systemName: item.isChecked ? "checkmark.square.fill" : "square")
                         .font(.title2)
+                        // 文字サイズが大きいとき、四角が大きくなりすぎて品目の幅をせばめないよう、上限を付ける（段階 F2）。
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                         .foregroundStyle(item.isChecked ? Color.accentColor : .secondary)
                     Text(item.name)
                         .foregroundStyle(.primary)
@@ -99,6 +103,7 @@ private struct BringItemRow: View {
                 store.perform { try $0.removeBringItem(id: item.id) }
             } label: {
                 Image(systemName: "xmark")
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .foregroundStyle(.secondary)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())

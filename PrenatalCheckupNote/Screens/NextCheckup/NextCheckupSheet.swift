@@ -12,6 +12,7 @@ struct NextCheckupSheet: View {
 
     @Environment(NoteStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     @State private var date = Date.now
     @State private var time = Date.now
@@ -46,7 +47,7 @@ struct NextCheckupSheet: View {
                 .environment(\.timeZone, Calendar.japan.timeZone)
 
                 Section {
-                    HStack(spacing: 8) {
+                    weeksLayout {
                         weeksButton(1)
                         weeksButton(2)
                         weeksButton(4)
@@ -139,7 +140,8 @@ struct NextCheckupSheet: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("お知らせの時刻（前日）")
                         .font(.maru(.subheadline).weight(.semibold))
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                    // 文字サイズがとても大きいときは 2 列にする（4 列のままだと「18:00」が 1 文字ずつ縦に折り返した。段階 F2）。
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: typeSize.isAccessibilitySize ? 2 : 4), spacing: 6) {
                         ForEach(availableSlots, id: \.self) { slot in
                             SlotButton(slot: slot, isSelected: slot == reminderSlot) {
                                 reminderSlot = slot
@@ -166,12 +168,20 @@ struct NextCheckupSheet: View {
         }
     }
 
+    /// 「◯ 週間後」のボタンの並べ方。文字サイズがとても大きいときは、3 つを縦に並べる（段階 F2）。
+    /// 横のままだと「1」「週」「間」「後」と 1 文字ずつ折り返した。
+    private var weeksLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 8))
+    }
+
     /// 「◯ 週間後」のボタン。前回の健診（なければ今日）から数える（R-32）。
     private func weeksButton(_ weeks: Int) -> some View {
         Button {
             date = (lastVisit ?? today).adding(days: weeks * 7).date(hour: 12)
         } label: {
             Text("\(weeks) 週間後")
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
         }
         // 行の中に複数のボタンを置くので、それぞれが別に押せる形にする。
@@ -358,6 +368,9 @@ private struct SlotButton: View {
         if isSelected {
             Button(action: action) {
                 Text(slot.description)
+                    // 時刻は途中で折り返すと読めないので 1 行に収め、入らなければ少しだけ縮める（段階 F2）。
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -365,6 +378,9 @@ private struct SlotButton: View {
         } else {
             Button(action: action) {
                 Text(slot.description)
+                    // 時刻は途中で折り返すと読めないので 1 行に収め、入らなければ少しだけ縮める（段階 F2）。
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)

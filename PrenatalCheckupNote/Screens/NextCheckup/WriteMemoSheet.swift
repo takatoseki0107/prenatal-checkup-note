@@ -170,6 +170,8 @@ struct WriteMemoSheet: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(AppColors.background)
+        // 下の帯は、文字サイズ最大でも画面の多くを占めないよう、大きさに上限を付ける（段階 F2）。
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - 決まり
