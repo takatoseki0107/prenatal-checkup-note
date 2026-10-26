@@ -11,8 +11,8 @@ final class NoteStore {
     private(set) var questions: [Question] = []
     private(set) var memos: [CheckupMemo] = []
     private(set) var memoDraft: MemoDraft?
-    /// 書きかけの健診後メモに選んだ写真（段階 E）。並び順。
-    private(set) var memoDraftPhotos: [MemoPhoto] = []
+    /// 健診後メモ（と書きかけ）の写真を、メモの ID ごとにまとめたもの（段階 E）。それぞれ並び順。
+    private(set) var photosByMemoID: [UUID: [MemoPhoto]] = [:]
     /// 書きかけの新しい質問（R-72）。
     private(set) var questionDraft: QuestionDraft?
     /// 次の健診。日付が入っていなければ `nil`。
@@ -78,7 +78,7 @@ final class NoteStore {
             questions = try service.questions()
             memos = try service.memos()
             memoDraft = try service.memoDraft()
-            memoDraftPhotos = try memoDraft.map { try service.photos(memoID: $0.id) } ?? []
+            photosByMemoID = Dictionary(grouping: try service.allPhotos(), by: \.memoID)
             questionDraft = try service.questionDraft()
             nextCheckup = try service.nextCheckup()
             bringItems = try service.bringItems()
@@ -94,6 +94,16 @@ final class NoteStore {
             pendingUndo = latestUndo
             scheduleUndoExpiry()
         }
+    }
+
+    /// そのメモ（または書きかけ）の写真。並び順。
+    func photos(forMemo id: UUID) -> [MemoPhoto] {
+        photosByMemoID[id] ?? []
+    }
+
+    /// 書きかけの健診後メモに選んだ写真。並び順。
+    var memoDraftPhotos: [MemoPhoto] {
+        memoDraft.map { photos(forMemo: $0.id) } ?? []
     }
 
     /// お知らせを考えるのに要る、いまの「次の健診」の値。予定がなければ `nil`。

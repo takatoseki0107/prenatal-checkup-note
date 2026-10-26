@@ -86,7 +86,7 @@ struct PastCheckupsScreen: View {
                 Button {
                     router.sheet = .memo(memo.id)
                 } label: {
-                    MemoRow(memo: memo, isAgeShown: store.showsGestationalAge)
+                    MemoRow(memo: memo, photoCount: store.photos(forMemo: memo.id).count, isAgeShown: store.showsGestationalAge)
                 }
                 .buttonStyle(.plain)
             }
@@ -133,9 +133,10 @@ private struct SearchResultRow: View {
     }
 }
 
-/// 健診後メモの 1 行。「◯月◯日（◯）の健診」・本文の 1 行目・「この健診で聞いたこと n件」。
+/// 健診後メモの 1 行。「◯月◯日（◯）の健診」・本文の 1 行目・「この健診で聞いたこと n件」・写真の枚数（段階 E）。
 private struct MemoRow: View {
     let memo: CheckupMemo
+    let photoCount: Int
     /// 「妊娠週数を表示する」（R-53）。オフなら、過去のメモにも出さない。
     let isAgeShown: Bool
 
@@ -152,12 +153,21 @@ private struct MemoRow: View {
                 .font(.subheadline)
                 .foregroundStyle(memo.body.isEmpty ? .secondary : .primary)
                 .lineLimit(1)
-            Text("この健診で聞いたこと \(memo.items.count)件")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                Text("この健診で聞いたこと \(memo.items.count)件")
+                if photoCount > 0 {
+                    // 写真の印は、文字の中に入れて「写真 n枚」とくっつける。
+                    Text("\(Image(systemName: "photo")) 写真 \(photoCount)枚")
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+        // メモとメモの間の区切り線は、行の左はしから引く。
+        // 指定しないと、行の中の文字の位置に合わせて引かれ、写真の印があると左が欠けた（E3 の画面の確認で見つかった）。
+        .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
     }
 
     /// 本文の 1 行目。本文がなければ、そう書く。
