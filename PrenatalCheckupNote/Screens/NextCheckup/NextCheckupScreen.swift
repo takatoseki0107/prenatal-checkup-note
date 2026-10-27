@@ -5,6 +5,7 @@ import SwiftUI
 /// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
 /// 行を押すと質問のシートを開く。出産予定日があれば、いちばん上に今日の妊娠週数を出す（R-51）。
 /// カードの 3 行目は、前日の夜のお知らせとスイッチ（段階 C）。
+/// 持ち物とお知らせの間に、次の健診までのやることの数を出す（R-110。0 件なら出さない）。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -256,6 +257,31 @@ private struct NextCheckupCard: View {
                         }
                         .buttonStyle(.borderless)
                         .fontWeight(.semibold)
+                    }
+                    // 次の健診までのやることの数（R-110）。0 件なら出さない。「見る」で「やること」のタブに移る。
+                    if let summary = TodoList.nextCheckupSummary(
+                        store.todos.map(\.listEntry),
+                        today: CalendarDay(.now),
+                        nextCheckupDay: day
+                    ) {
+                        Divider()
+                        rowLayout {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(summary.title)
+                                if let overdueText = summary.overdueText {
+                                    Text(overdueText)
+                                        .font(.maru(.caption).weight(.semibold))
+                                        .foregroundStyle(.orange)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            Button("見る") {
+                                router.selectedTab = .todo
+                            }
+                            .buttonStyle(.borderless)
+                            .fontWeight(.semibold)
+                            .accessibilityLabel("やることを見る")
+                        }
                     }
                     if let input = store.reminderInput {
                         Divider()

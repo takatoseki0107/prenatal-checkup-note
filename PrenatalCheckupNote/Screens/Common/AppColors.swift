@@ -14,6 +14,8 @@ enum AppColors {
     static let pink = Color("AccentPink")
     /// 星（大事な質問）の黄色。
     static let star = Color("StarYellow")
+    /// やることの緑のチェックと「完了にする」のボタン（5.10、R-104）。白い文字が読める濃さの緑にしている。
+    static let check = Color("CheckGreen")
 }
 
 /// アプリの字体（段階 F）。iPhone に最初から入っている丸い字体「ヒラギノ丸ゴ」を使う。

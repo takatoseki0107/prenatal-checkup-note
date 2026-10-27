@@ -1,0 +1,320 @@
+import SwiftUI
+
+/// タブ「やること」（要件定義 v0.4 の 5.10、R-100〜R-106）。触れる見本 `Todo.dc.html` と同じ並びにする。
+///
+/// 一覧は見出しごと：いちばん上に「期限なし」、次に「期限を過ぎた」、そのあと期限の日ごと（並べ方は `TodoList`）。
+/// 丸を押すと緑のチェックが付いてその場に残り、下の「チェックした n 件を完了にする」で「完了したこと」に移る（2 段階、R-104）。
+/// 各行の星の下の「直す」で、足すときと同じシートを開く。左にスワイプで削除し、元に戻すの帯で戻せる（R-105）。
+struct TodoScreen: View {
+    @Environment(NoteStore.self) private var store
+    @Environment(AppRouter.self) private var router
+    /// 「完了したこと」を開いているか。最初はたたんでおく（R-104）。
+    @State private var showsCompleted = false
+
+    var body: some View {
+        let today = CalendarDay(.now)
+        let entries = store.todos.map(\.listEntry)
+        let sections = TodoList.sections(entries, today: today, nextCheckupDay: store.nextCheckup?.day)
+        let completed = TodoList.completed(entries)
+        let checkedCount = TodoList.checkedCount(entries)
+
+        List {
+            if entries.isEmpty {
+                Section {
+                    Text("やることはまだありません。先生に言われた申請や、産院への連絡などを「＋ やることを足す」で書いておきましょう。")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            ForEach(sections, id: \.kind) { section in
+                sectionView(section, today: today)
+            }
+
+            if !completed.isEmpty {
+                completedSection(completed)
+            }
+
+            if !entries.isEmpty {
+                Section {
+                } footer: {
+                    Text("丸を押すと緑のチェックが付きます。下の「完了にする」で「完了したこと」に移ります。「直す」で期限などを直せます。左にスワイプで削除できます。")
+                }
+            }
+        }
+        // 1 件ずつを、間を空けた丸いカードにする（ほかの画面と同じ。段階 F）。
+        .listRowSpacing(10)
+        .appBackground()
+        .navigationTitle("やること")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    router.sheet = .settings
+                } label: {
+                    Label("設定", systemImage: "gearshape")
+                }
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                UndoBar()
+                VStack(spacing: 8) {
+                    // チェックが 1 つ以上あるときだけ出す（R-104）。
+                    if checkedCount > 0 {
+                        Button {
+                            store.perform { try $0.completeCheckedTodos(now: .now) }
+                        } label: {
+                            Label(TodoList.completeButtonTitle(checkedCount: checkedCount), systemImage: "checkmark")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .tint(AppColors.check)
+                    }
+                    Button {
+                        router.sheet = .addTodo
+                    } label: {
+                        Label("やることを足す", systemImage: "plus")
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                // 押しやすいように大きめにする（健診予定の下のボタンと同じ。段階 F）。
+                .controlSize(.extraLarge)
+                .font(.maru(.headline))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .background(AppColors.background)
+            // 下の帯は、文字サイズ最大でも画面の多くを占めないよう、大きさに上限を付ける（段階 F2）。
+            .dynamicTypeSize(...DynamicTypeSize.accessibility1)
+            .animation(.default, value: store.pendingUndo)
+            .animation(.default, value: checkedCount)
+        }
+    }
+
+    /// 見出し 1 つ分。次の健診の線は、見出しのない 1 行にする。
+    @ViewBuilder
+    private func sectionView(_ section: TodoList.Section, today: CalendarDay) -> some View {
+        if case .nextCheckupLine = section.kind {
+            Section {
+                NextCheckupLine(title: section.title)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+            }
+            .listSectionSpacing(.compact)
+        } else {
+            Section {
+                ForEach(section.entries) { entry in
+                    TodoRow(entry: entry, today: today)
+                        .listRowSeparator(.hidden)
+                        // 左にスワイプで削除。大きくスワイプすると、そのまま削除する（R-105）。確認は出さず、元に戻すの帯で戻せる。
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button("削除", role: .destructive) {
+                                store.perform { try $0.deleteTodo(id: entry.id) }
+                            }
+                        }
+                }
+            } header: {
+                SectionHeader(section: section, today: today)
+            }
+        }
+    }
+
+    /// 「完了したこと（n 件）」。見出しを押すと開く・たたむ（R-104）。
+    private func completedSection(_ completed: [TodoList.Entry]) -> some View {
+        Section {
+            if showsCompleted {
+                ForEach(completed) { entry in
+                    CompletedRow(entry: entry)
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button("削除", role: .destructive) {
+                                store.perform { try $0.deleteTodo(id: entry.id) }
+                            }
+                        }
+                }
+            }
+        } header: {
+            Button {
+                withAnimation {
+                    showsCompleted.toggle()
+                }
+            } label: {
+                HStack {
+                    Text(TodoList.completedTitle(count: completed.count))
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .rotationEffect(.degrees(showsCompleted ? 90 : 0))
+                        .accessibilityHidden(true)
+                }
+                .font(.maru(.subheadline).weight(.semibold))
+                .foregroundStyle(.secondary)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .textCase(nil)
+            .accessibilityHint(showsCompleted ? "押すと、完了したことをたたみます" : "押すと、完了したことを開きます")
+        }
+    }
+}
+
+/// 見出し。「期限を過ぎた」はオレンジ、今日と次の健診の日は強調の色で出す。日付などを横に添える。
+private struct SectionHeader: View {
+    let section: TodoList.Section
+    let today: CalendarDay
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(section.title)
+                .font(.maru(.subheadline).weight(.semibold))
+                .foregroundStyle(titleColor)
+            if let subtitle = section.subtitle {
+                Text(subtitle)
+                    .font(.maru(.footnote))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .textCase(nil)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var titleColor: Color {
+        switch section.kind {
+        case .overdue:
+            .orange
+        case .day(let day, let isNextCheckupDay):
+            isNextCheckupDay || day == today ? Color.accentColor : .primary
+        case .noDue, .nextCheckupLine:
+            .secondary
+        }
+    }
+}
+
+/// 「── 11月9日（月）は次の健診 ──」の線。その日のやることがないときだけ出す（R-103）。
+private struct NextCheckupLine: View {
+    let title: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            line
+            Text(title)
+                .font(.maru(.footnote).weight(.semibold))
+                .foregroundStyle(Color.accentColor)
+                .fixedSize(horizontal: false, vertical: true)
+            line
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var line: some View {
+        Rectangle()
+            .fill(Color.accentColor.opacity(0.35))
+            .frame(height: 1)
+    }
+}
+
+/// やることの 1 行。左の丸（緑のチェック）・文・補足・期限を過ぎた日・どの健診から足したか・右に星と「直す」。
+private struct TodoRow: View {
+    @Environment(NoteStore.self) private var store
+    @Environment(AppRouter.self) private var router
+    let entry: TodoList.Entry
+    let today: CalendarDay
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // 押すと緑のチェックが付く・外れる。その場に残る（完了の 1 段階目、R-104）。
+            Button {
+                store.perform { try $0.setTodoChecked(!entry.isChecked, todoID: entry.id) }
+            } label: {
+                Image(systemName: entry.isChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    // 文字サイズが大きいとき、丸が大きくなりすぎて文の幅をせばめないよう、上限を付ける（段階 F2）。
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .foregroundStyle(entry.isChecked ? AppColors.check : .secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(entry.isChecked ? "チェックあり" : "チェックなし")
+            .accessibilityHint(entry.isChecked ? "押すとチェックを外します" : "押すとチェックを付けます。下のボタンで完了にできます")
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                if !entry.note.isEmpty {
+                    Text(entry.note)
+                        .font(.maru(.footnote))
+                        .foregroundStyle(.secondary)
+                }
+                // 期限の日は見出しにあるので、行には出さない。期限を過ぎたものだけ出す（R-103）。
+                if let dueText = TodoList.rowDueText(entry, today: today) {
+                    Text(dueText)
+                        .font(.maru(.footnote).weight(.semibold))
+                        .foregroundStyle(.orange)
+                }
+                if let originText = TodoList.originText(entry) {
+                    Text(originText)
+                        .font(.maru(.caption))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            VStack(spacing: 6) {
+                Button {
+                    store.perform { try $0.setTodoStarred(!entry.isStarred, todoID: entry.id) }
+                } label: {
+                    Image(systemName: entry.isStarred ? "star.fill" : "star")
+                        .font(.title3)
+                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                        .foregroundStyle(entry.isStarred ? AppColors.star : .secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(entry.isStarred ? "星あり" : "星なし")
+                .accessibilityHint(entry.isStarred ? "押すと星を外します" : "押すと星を付けます")
+
+                // 文・期限・補足・印を直す。削除もここからできる（R-101、R-105）。
+                Button("直す") {
+                    router.sheet = .editTodo(entry.id)
+                }
+                .font(.maru(.caption).weight(.semibold))
+                .buttonStyle(.borderless)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                .accessibilityLabel("「\(entry.title)」を直す")
+            }
+        }
+    }
+}
+
+/// 「完了したこと」の 1 行。丸を押すと完了を取り消して一覧に戻す（R-104）。
+private struct CompletedRow: View {
+    @Environment(NoteStore.self) private var store
+    let entry: TodoList.Entry
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Button {
+                store.perform { try $0.reopenTodo(id: entry.id) }
+            } label: {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title2)
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+                    .foregroundStyle(Color.accentColor)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("完了")
+            .accessibilityHint("押すと完了を取り消して、一覧に戻します")
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .strikethrough()
+                    .foregroundStyle(.secondary)
+                if let originText = TodoList.originText(entry) {
+                    Text(originText)
+                        .font(.maru(.caption))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}

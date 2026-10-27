@@ -60,7 +60,7 @@ nonisolated enum TodoList {
 
     /// 一覧のまとまり 1 つ（見出しと、その下のやること）。次の健診の線は、やることを持たない。
     nonisolated struct Section: Equatable, Sendable {
-        nonisolated enum Kind: Equatable, Sendable {
+        nonisolated enum Kind: Hashable, Sendable {
             /// 期限なし（いちばん上）。
             case noDue
             /// 期限を過ぎた（オレンジ）。
