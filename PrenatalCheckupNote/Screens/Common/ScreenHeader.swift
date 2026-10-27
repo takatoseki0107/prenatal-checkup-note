@@ -62,7 +62,8 @@ struct ScreenHeader: View {
 
     @Environment(\.dynamicTypeSize) private var typeSize
     /// 蛍光ペンの太さ。文字の大きさに合わせて太くする。
-    @ScaledMetric(relativeTo: .title) private var markerHeight: CGFloat = 12
+    /// 最初は 12 ポイントで太すぎた（開発者の指摘）ので、半分以下にして、文字の下のほうに引く。
+    @ScaledMetric(relativeTo: .title) private var markerHeight: CGFloat = 5
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -79,13 +80,13 @@ struct ScreenHeader: View {
                 Text(title)
                     .font(.maru(.title))
                     .foregroundStyle(.primary)
-                    // 題名の下半分に、少し傾けた蛍光ペンの色を敷く。
+                    // 題名の下のほうに、少し傾けた細い蛍光ペンの線を引く。
                     .background(alignment: .bottom) {
                         Capsule()
                             .fill(kind.marker)
                             .frame(height: markerHeight)
-                            .padding(.horizontal, -4)
-                            .offset(y: -markerHeight * 0.15)
+                            .padding(.horizontal, -3)
+                            .offset(y: markerHeight * 0.2)
                             .rotationEffect(.degrees(-1.2))
                     }
                     .overlay(alignment: .topTrailing) {
