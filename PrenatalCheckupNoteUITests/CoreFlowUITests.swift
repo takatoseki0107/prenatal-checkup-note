@@ -86,6 +86,40 @@ final class CoreFlowUITests: XCTestCase {
         XCTAssertEqual(restored.value as? String, "お腹の張り")
     }
 
+    /// やることを足す（期限は今日）→ 緑のチェック → 完了にする → 元に戻す（5.10、R-101〜R-104）。
+    @MainActor
+    func testAddsCompletesAndUndoesATodo() throws {
+        let app = launch(resettingData: true)
+        skipOnboarding(app)
+
+        // 「やること」のタブを開き、やることを足す。
+        app.tabBars.buttons["やること"].tap()
+        let addButton = app.buttons["やることを足す"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: timeout))
+        addButton.tap()
+        let input = field("todoTitleField", in: app)
+        XCTAssertTrue(input.waitForExistence(timeout: timeout))
+        input.tap()
+        input.typeText("母親学級の申し込み")
+
+        // 期限のボタンで「今日」を選ぶと、選んだ期限が文で出る（R-102）。
+        app.buttons["今日"].firstMatch.tap()
+        XCTAssertTrue(element(labelContaining: "期限：", in: app).waitForExistence(timeout: timeout))
+        app.buttons["追加"].tap()
+        XCTAssertTrue(element(labelContaining: "母親学級の申し込み", in: app).waitForExistence(timeout: timeout))
+
+        // 丸を押すと緑のチェックが付き、その場に残る。下のボタンで完了にする（R-104）。
+        app.buttons["チェックなし"].firstMatch.tap()
+        let completeButton = app.buttons["チェックした 1 件を完了にする"]
+        XCTAssertTrue(completeButton.waitForExistence(timeout: timeout))
+        completeButton.tap()
+        XCTAssertTrue(element(labelContaining: "完了したこと（1 件）", in: app).waitForExistence(timeout: timeout))
+
+        // 元に戻すと、チェックが付いた状態で一覧に戻る。
+        app.buttons["元に戻す"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["チェックあり"].firstMatch.waitForExistence(timeout: timeout))
+    }
+
     // MARK: - 手順
 
     /// 画面のテスト用の保存場所で起動する。

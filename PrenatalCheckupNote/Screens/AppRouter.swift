@@ -12,6 +12,8 @@ final class AppRouter {
     nonisolated enum Tab: Hashable {
         /// 次の健診（日付・持ち物・聞きたいこと）。
         case next
+        /// やること（申請や連絡など、健診と健診の間にすること。5.10）。
+        case todo
         /// これまでの健診（健診後メモを見返す）。
         case past
     }
@@ -34,11 +36,18 @@ final class AppRouter {
         case settings
         /// 「次の健診」の聞きたいことの一覧を、文章で共有する（段階 D）。
         case shareQuestions
+        /// やることを足す（R-101）。
+        case addTodo
+        /// やることを直す・削除する（R-101、R-105）。
+        case editTodo(UUID)
 
         var id: Self { self }
     }
 
     var selectedTab: Tab = .next
+    /// 「やること」を、次の健診までのものだけに絞って見せるか（R-111）。健診予定のカードの「見る」で `true` にする。
+    /// 絞り込みをやめるボタンを押すか、ほかのタブに移ると `false` に戻る。
+    var showsTodosUntilNextCheckup = false
     /// 開いているシート。開いていなければ `nil`。
     var sheet: Sheet?
 }
