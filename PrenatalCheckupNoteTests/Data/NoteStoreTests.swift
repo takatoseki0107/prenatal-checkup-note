@@ -32,8 +32,13 @@ struct NoteStoreTests {
         noteStore.perform { try $0.deleteQuestion(id: id) }
         #expect(noteStore.pendingUndo != nil)
 
-        // 帯を出す時間（0.1 秒）より十分長く待つ。
-        try await Task.sleep(for: .seconds(1))
+        // 帯を出す時間（0.1 秒）が過ぎて、帯が消えるまで待つ。
+        // ほかのテストと同時に動くと画面のスレッド（メインアクター）が混み、消す処理が始まるのが遅れることがある。
+        // そのため、決まった時間だけ待つのではなく、消えるまで 0.05 秒ごとに確かめる（最大 10 秒。ToDo 1 で、1 秒では足りなかった）。
+        let deadline = ContinuousClock.now + .seconds(10)
+        while noteStore.pendingUndo != nil, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(50))
+        }
 
         #expect(noteStore.pendingUndo == nil)
         #expect(service.pendingUndo == nil)
