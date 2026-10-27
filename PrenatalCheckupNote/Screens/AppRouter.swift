@@ -46,7 +46,7 @@ final class AppRouter {
 
     var selectedTab: Tab = .next
     /// 「やること」を、次の健診までのものだけに絞って見せるか（R-111）。健診予定のカードの「見る」で `true` にする。
-    /// 「すべて表示」を押すか、ほかのタブに移ると `false` に戻る。
+    /// 絞り込みをやめるボタンを押すか、ほかのタブに移ると `false` に戻る。
     var showsTodosUntilNextCheckup = false
     /// 開いているシート。開いていなければ `nil`。
     var sheet: Sheet?

@@ -209,9 +209,19 @@ nonisolated enum TodoList {
         }
     }
 
-    /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）までのやること　2 件」。
-    static func untilNextCheckupTitle(nextCheckupDay: CalendarDay, count: Int) -> String {
-        "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）までのやること　\(count) 件"
+    /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）までのやること」。数は横に大きく出す。
+    static func untilNextCheckupTitle(nextCheckupDay: CalendarDay) -> String {
+        "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）までのやること"
+    }
+
+    /// 絞り込みをやめるボタンの文（R-111）。ほかに完了していないやることがあれば、その数を出す。
+    ///
+    /// 「すべて表示」だけだと、ほかにもあるのかがわからず迷う（開発者の指摘）ため、ほかの数を書く。ほかがなければ、一覧に戻るとだけ書く。
+    /// 例：「ほかのやること（1 件）も表示」「やることの一覧に戻る」。
+    static func showOthersButtonTitle(_ entries: [Entry], nextCheckupDay: CalendarDay) -> String {
+        let openCount = entries.filter { !$0.isCompleted }.count
+        let others = openCount - untilNextCheckup(entries, nextCheckupDay: nextCheckupDay).count
+        return others > 0 ? "ほかのやること（\(others) 件）も表示" : "やることの一覧に戻る"
     }
 
     // MARK: - 行と見出しの文

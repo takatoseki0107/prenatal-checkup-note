@@ -5,7 +5,7 @@ import SwiftUI
 /// 一覧は見出しごと：いちばん上に「期限なし」、次に「期限を過ぎた」、そのあと期限の日ごと（並べ方は `TodoList`）。
 /// 丸を押すと緑のチェックが付いてその場に残り、下の「チェックした n 件を完了にする」で「完了したこと」に移る（2 段階、R-104）。
 /// 各行の星の下の「直す」で、足すときと同じシートを開く。左にスワイプで削除し、元に戻すの帯で戻せる（R-105）。
-/// 健診予定のカードの「見る」から開いたときは、次の健診までのやることだけに絞り、上の帯の「すべて表示」で戻す（R-111）。
+/// 健診予定のカードの「見る」から開いたときは、次の健診までのやることだけに絞り、上の帯のボタン（「ほかのやること（n 件）も表示」）で戻す（R-111）。
 struct TodoScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -25,7 +25,11 @@ struct TodoScreen: View {
 
         List {
             if let narrowingDay {
-                narrowingBanner(day: narrowingDay, count: shown.count)
+                narrowingBanner(
+                    day: narrowingDay,
+                    count: shown.count,
+                    buttonTitle: TodoList.showOthersButtonTitle(entries, nextCheckupDay: narrowingDay)
+                )
             } else if entries.isEmpty {
                 Section {
                     Text("やることはまだありません。先生に言われた申請や、産院への連絡などを「＋ やることを足す」で書いておきましょう。")
@@ -106,13 +110,22 @@ struct TodoScreen: View {
         }
     }
 
-    /// 絞り込んでいるときに一覧の上に出す帯（R-111）。何に絞っているかと、「すべて表示」。
-    private func narrowingBanner(day: CalendarDay, count: Int) -> some View {
+    /// 絞り込んでいるときに一覧の上に出す帯（R-111）。何に絞っているかと数、絞り込みをやめるボタン。
+    private func narrowingBanner(day: CalendarDay, count: Int, buttonTitle: String) -> some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
-                Text(TodoList.untilNextCheckupTitle(nextCheckupDay: day, count: count))
-                    .font(.maru(.headline))
-                    .fixedSize(horizontal: false, vertical: true)
+                // 数だけが次の行に回って読みにくくならないよう、数は文と分けて右に大きく出す。
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(TodoList.untilNextCheckupTitle(nextCheckupDay: day))
+                        .font(.maru(.headline))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("\(count) 件")
+                        .font(.maru(.title3).weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .fixedSize()
+                }
+                .accessibilityElement(children: .combine)
                 if count == 0 {
                     Text("次の健診までのやることは、もうありません。")
                         .font(.maru(.subheadline))
@@ -123,7 +136,7 @@ struct TodoScreen: View {
                         router.showsTodosUntilNextCheckup = false
                     }
                 } label: {
-                    Text("すべて表示")
+                    Text(buttonTitle)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)

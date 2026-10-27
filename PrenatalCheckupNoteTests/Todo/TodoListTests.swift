@@ -264,7 +264,18 @@ struct TodoListTests {
 
         #expect(narrowed.map(\.title) == ["過ぎた", "今日", "次の健診の日"])
         #expect(sections.map(\.title) == ["期限を過ぎた", "今日", "11月9日（月）"])
-        #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup, count: narrowed.count) == "次の健診（11月9日）までのやること　3 件")
+        #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup) == "次の健診（11月9日）までのやること")
+        // 完了したものは「ほか」に数えない。
+        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "ほかのやること（2 件）も表示")
+    }
+
+    @Test func saysBackToTheListWhenThereAreNoOthers() {
+        let entries = [
+            entry("今日", due: today),
+            entry("完了", completedAt: added(10)),
+        ]
+
+        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "やることの一覧に戻る")
     }
 
     // MARK: - 行の文（R-103、R-107）
