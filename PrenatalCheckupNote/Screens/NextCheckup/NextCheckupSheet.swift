@@ -378,6 +378,8 @@ private struct SlotButton: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+            .foregroundStyle(AppColors.onAccent)
             .accessibilityAddTraits(.isSelected)
         } else {
             Button(action: action) {

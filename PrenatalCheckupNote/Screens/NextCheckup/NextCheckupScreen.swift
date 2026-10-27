@@ -103,6 +103,8 @@ struct NextCheckupScreen: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+                .foregroundStyle(AppColors.onAccent)
                 // 押しやすいように大きめにして、左右の余白も詰める（段階 F）。
                 .controlSize(.extraLarge)
                 .font(.maru(.headline))
@@ -315,6 +317,8 @@ private struct NextCheckupCard: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
+                    // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+                    .foregroundStyle(AppColors.onAccent)
                     .controlSize(.large)
                 }
                 .padding(.vertical, 6)

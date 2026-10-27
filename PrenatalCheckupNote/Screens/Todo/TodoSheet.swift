@@ -179,7 +179,7 @@ struct TodoSheet: View {
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+                .foregroundStyle(isSelected ? AppColors.onAccent : Color.accentColor)
                 .background(Capsule().fill(isSelected ? Color.accentColor : Color.clear))
                 .overlay(Capsule().strokeBorder(isSelected ? Color.clear : Color.accentColor.opacity(0.45)))
                 .contentShape(Capsule())

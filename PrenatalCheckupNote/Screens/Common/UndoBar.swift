@@ -22,6 +22,8 @@ struct UndoBar: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+                .foregroundStyle(AppColors.onAccent)
             }
             .padding(.horizontal)
             .padding(.vertical, 8)

@@ -105,6 +105,8 @@ struct TodoScreen: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+                .foregroundStyle(AppColors.onAccent)
                 // 押しやすいように大きめにする（健診予定の下のボタンと同じ。段階 F）。
                 .controlSize(.extraLarge)
                 .font(.maru(.headline))

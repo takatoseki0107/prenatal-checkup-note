@@ -35,6 +35,8 @@ struct BringItemsSheet: View {
                                 addItem()
                             }
                             .buttonStyle(.borderedProminent)
+                            // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+                            .foregroundStyle(AppColors.onAccent)
                             .disabled(InputText.normalized(newItemName) == nil)
                         }
                     }
