@@ -21,6 +21,8 @@ struct MemoDetailSheet: View {
     @State private var isConfirmingDelete = false
     /// 直す画面で、読み込んでいる写真の数。0 でなければ保存できない。
     @State private var loadingPhotoCount = 0
+    /// 「やることを足す」のシートを開いているか（R-107）。
+    @State private var isAddingTodo = false
 
     var body: some View {
         NavigationStack {
@@ -29,7 +31,9 @@ struct MemoDetailSheet: View {
                     if isEditing {
                         editForm
                     } else {
-                        MemoView(memo: memo, photos: store.photos(forMemo: memo.id), isAgeShown: store.showsGestationalAge)
+                        MemoView(memo: memo, photos: store.photos(forMemo: memo.id), isAgeShown: store.showsGestationalAge) {
+                            isAddingTodo = true
+                        }
                     }
                 } else if !isClosing {
                     ContentUnavailableView(
@@ -83,6 +87,12 @@ struct MemoDetailSheet: View {
                 }
             }
             .animation(.default, value: store.pendingUndo)
+            // 「＋ やることに足す」で開く。足したやることには、このメモの受診日が付く（R-107）。
+            .sheet(isPresented: $isAddingTodo) {
+                if let memo, let visitDay = memo.visitDay {
+                    TodoSheet(mode: .addFromMemo(memoID: memo.id, visitDay: visitDay))
+                }
+            }
             .alert("変更を破棄しますか？", isPresented: $isConfirmingCancel) {
                 Button("編集を続ける", role: .cancel) {}
                 Button("破棄", role: .destructive) {
@@ -105,8 +115,8 @@ struct MemoDetailSheet: View {
         // 変更があるときだけ止める形だと、日本語の変換を確定する前の文字がまだ変更に数えられず、
         // そのすきにスワイプで閉じられて、直しかけの内容が消えた（B5 の画面の確認で見つかった）。
         .interactiveDismissDisabled(isEditing || loadingPhotoCount > 0)
-        // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
-        .noteErrorAlert(store)
+        // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。やることのシートを開いている間は、そちらで知らせる。
+        .noteErrorAlert(store, isActive: !isAddingTodo)
     }
 
     // MARK: - 直す画面
@@ -259,6 +269,8 @@ private struct MemoView: View {
     let photos: [MemoPhoto]
     /// 「妊娠週数を表示する」。オフなら、共有の文章にも週数を入れない。
     let isAgeShown: Bool
+    /// 「＋ やることに足す」を押したとき（R-107）。
+    let onAddTodo: () -> Void
 
     /// 大きく出している写真。出していなければ `nil`。
     @State private var viewing: ViewingPhoto?
@@ -272,6 +284,8 @@ private struct MemoView: View {
                             .textSelection(.enabled)
                     }
                 }
+                // 先生に言われた「次までにすること」を、あとからでもやることに足せる（R-107）。
+                MemoTodosSection(memoID: memo.id, onAdd: onAddTodo)
                 if !photos.isEmpty {
                     Section {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {

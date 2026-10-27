@@ -23,6 +23,8 @@ struct WriteMemoSheet: View {
     @State private var loadingPhotoCount = 0
     /// キーボードが出ているか。出ている間は、下の保存の帯を隠す。
     @State private var isKeyboardShown = false
+    /// 「やることを足す」のシートを開いているか（R-107）。
+    @State private var isAddingTodo = false
 
     var body: some View {
         NavigationStack {
@@ -34,6 +36,12 @@ struct WriteMemoSheet: View {
                             .lineLimit(4...)
                             // 画面のテストで、この欄を見つけるための名前。
                             .accessibilityIdentifier("memoBodyField")
+                    }
+                    // 先生に言われた「次までにすること」を、ここからやることに足せる（R-107）。
+                    if let draftID = store.memoDraft?.id {
+                        MemoTodosSection(memoID: draftID) {
+                            isAddingTodo = true
+                        }
                     }
                     MemoPhotosSection(
                         memoID: store.memoDraft?.id,
@@ -72,6 +80,12 @@ struct WriteMemoSheet: View {
                     saveBar
                 }
             }
+            // 「＋ やることに足す」で開く。受診日は、いま画面で選んでいる日（R-107）。
+            .sheet(isPresented: $isAddingTodo) {
+                if let draftID = store.memoDraft?.id {
+                    TodoSheet(mode: .addFromMemo(memoID: draftID, visitDay: visitDay))
+                }
+            }
             .onKeyboardVisibilityChange { shown in
                 withAnimation(.easeOut(duration: 0.2)) {
                     isKeyboardShown = shown
@@ -102,8 +116,8 @@ struct WriteMemoSheet: View {
         }
         // まだ保存できていない入力があるとき・写真を読み込んでいるときは、下にスワイプしても閉じない。
         .interactiveDismissDisabled(hasUnsavedInput || loadingPhotoCount > 0)
-        // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。
-        .noteErrorAlert(store)
+        // シートの上で起きた失敗は、シートの上で知らせる（ADR 0009）。やることのシートを開いている間は、そちらで知らせる。
+        .noteErrorAlert(store, isActive: !isAddingTodo)
     }
 
     // MARK: - 部品

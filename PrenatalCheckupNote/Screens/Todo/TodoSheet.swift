@@ -6,10 +6,13 @@ import SwiftUI
 /// 期限はボタン（期限なし・今日・明日・次の健診まで・1 週間後・日付を選ぶ）で選び、選んだ期限をすぐ下に文で見せる。
 /// 期限には選んだときの日付をそのまま入れる（ADR 0012）。直すときは、削除もここからできる（確認なし、元に戻すの帯で戻せる）。
 /// 書きかけは残さない（「追加」「保存」を押したときだけ保存する）。
+/// 健診後メモの画面の「＋ やることに足す」からは、そのメモの受診日と ID を持って開く（R-107）。
 struct TodoSheet: View {
     nonisolated enum Mode: Equatable {
         case add
         case edit(UUID)
+        /// 健診後メモ（または書きかけ）から足す。足したやることには「◯月◯日の健診で」と出る。
+        case addFromMemo(memoID: UUID, visitDay: CalendarDay)
     }
 
     let mode: Mode
@@ -81,9 +84,23 @@ struct TodoSheet: View {
     private var form: some View {
         Form {
             Group {
-                Section("やること") {
+                Section {
                     TextField("例：母親学級の申し込み", text: $title, axis: .vertical)
                         .accessibilityIdentifier("todoTitleField")
+                } header: {
+                    VStack(alignment: .leading, spacing: 10) {
+                        // 健診後メモから開いたときは、どの健診で言われたこととして足すかを先に見せる（R-107）。
+                        if let memoVisitDay {
+                            Text("\(memoVisitDay.month)月\(memoVisitDay.day)日の健診で言われたこととして足します")
+                                .font(.maru(.footnote))
+                                .foregroundStyle(Color.accentColor)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                                .textCase(nil)
+                        }
+                        Text("やること")
+                    }
                 }
 
                 Section {
@@ -217,6 +234,14 @@ struct TodoSheet: View {
         return false
     }
 
+    /// 健診後メモから開いたときの、そのメモの受診日。ほかから開いたときは `nil`。
+    private var memoVisitDay: CalendarDay? {
+        if case .addFromMemo(_, let visitDay) = mode {
+            return visitDay
+        }
+        return nil
+    }
+
     private var todo: TodoItem? {
         guard case .edit(let id) = mode else {
             return nil
@@ -224,8 +249,13 @@ struct TodoSheet: View {
         return store.todos.first { $0.id == id }
     }
 
+    /// 「次の健診まで」に使う日。健診後メモから開いたときは、いま書いている健診の日なら使わない（R-107）。
     private var nextCheckupDay: CalendarDay? {
-        store.nextCheckup?.day
+        let day = store.nextCheckup?.day
+        guard let memoVisitDay else {
+            return day
+        }
+        return TodoDueChoice.offeredNextCheckupDay(day, memoVisitDay: memoVisitDay)
     }
 
     /// いま選んでいる期限の日。
@@ -282,6 +312,19 @@ struct TodoSheet: View {
                 .map { _ in () }
         case .edit(let id):
             result = store.perform { try $0.updateTodo(id: id, title: title, note: note, dueDay: dueDay, isStarred: isStarred) }
+        case .addFromMemo(let memoID, let visitDay):
+            result = store.perform {
+                try $0.addTodo(
+                    title: title,
+                    note: note,
+                    dueDay: dueDay,
+                    isStarred: isStarred,
+                    originVisitDay: visitDay,
+                    originMemoID: memoID,
+                    now: .now
+                )
+            }
+            .map { _ in () }
         }
         if result != nil {
             isClosing = true
