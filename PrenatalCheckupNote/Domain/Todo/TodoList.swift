@@ -74,7 +74,8 @@ nonisolated enum TodoList {
         let kind: Kind
         /// 見出しの文。例：「期限なし」「今日」「11月9日（月）」「11月9日（月）は次の健診」。
         let title: String
-        /// 見出しに添える文。例：「10月27日（火）」「次の健診の日」「10月27日（火）　次の健診の日」。なければ `nil`。
+        /// 見出しに添える日付（今日・明日のときだけ）。例：「10月27日（火）」。なければ `nil`。
+        /// 次の健診の日かどうかは `kind` の `isNextCheckupDay` で見る（画面では、見出しの横に札を付ける）。
         let subtitle: String?
         let entries: [Entry]
     }
@@ -128,7 +129,7 @@ nonisolated enum TodoList {
             result.append(Section(
                 kind: .day(day, isNextCheckupDay: isNextCheckupDay),
                 title: dayTitle(day, today: today),
-                subtitle: daySubtitle(day, today: today, isNextCheckupDay: isNextCheckupDay),
+                subtitle: daySubtitle(day, today: today),
                 entries: sortedInSection(upcoming.filter { $0.dueDay == day })
             ))
         }
@@ -279,11 +280,8 @@ nonisolated enum TodoList {
         }
     }
 
-    private static func daySubtitle(_ day: CalendarDay, today: CalendarDay, isNextCheckupDay: Bool) -> String? {
-        let date: String? = today.days(until: day) <= 1 ? day.displayText : nil
-        let next: String? = isNextCheckupDay ? "次の健診の日" : nil
-        let parts = [date, next].compactMap { $0 }
-        return parts.isEmpty ? nil : parts.joined(separator: "　")
+    private static func daySubtitle(_ day: CalendarDay, today: CalendarDay) -> String? {
+        today.days(until: day) <= 1 ? day.displayText : nil
     }
 
     private static func nextCheckupLine(_ day: CalendarDay) -> Section {

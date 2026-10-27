@@ -53,7 +53,7 @@ struct TodoListTests {
         let sections = TodoList.sections(entries, today: today, nextCheckupDay: nextCheckup)
 
         #expect(sections.map(\.title) == ["期限なし", "期限を過ぎた", "今日", "明日", "11月9日（月）", "11月16日（月）"])
-        #expect(sections.map(\.subtitle) == [nil, nil, "10月27日（火）", "10月28日（水）", "次の健診の日", nil])
+        #expect(sections.map(\.subtitle) == [nil, nil, "10月27日（火）", "10月28日（水）", nil, nil])
         #expect(sections.map { $0.entries.map(\.title) } == [["期限なし"], ["過ぎた"], ["今日"], ["明日"], ["次の健診の日"], ["その先"]])
         #expect(sections[4].kind == .day(nextCheckup, isNextCheckupDay: true))
     }
@@ -167,7 +167,8 @@ struct TodoListTests {
         let sections = TodoList.sections(entries, today: today, nextCheckupDay: today)
 
         #expect(sections.map(\.title) == ["今日"])
-        #expect(sections.map(\.subtitle) == ["10月27日（火）　次の健診の日"])
+        #expect(sections.map(\.subtitle) == ["10月27日（火）"])
+        #expect(sections.map(\.kind) == [.day(today, isNextCheckupDay: true)])
     }
 
     // MARK: - 完了したこと（R-104）
