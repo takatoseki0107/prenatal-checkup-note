@@ -247,6 +247,26 @@ struct TodoListTests {
         #expect(TodoList.nextCheckupSummary(entries, today: today, nextCheckupDay: nextCheckup) == nil)
     }
 
+    // MARK: - 次の健診までに絞る（R-111）
+
+    @Test func narrowsToTodosUntilTheNextCheckup() {
+        let entries = [
+            entry("過ぎた", due: days(-2), added: 1),
+            entry("今日", due: today, added: 2),
+            entry("次の健診の日", due: nextCheckup, added: 3),
+            entry("その先", due: days(20), added: 4),
+            entry("期限なし", added: 5),
+            entry("完了", due: today, completedAt: added(10), added: 6),
+        ]
+
+        let narrowed = TodoList.untilNextCheckup(entries, nextCheckupDay: nextCheckup)
+        let sections = TodoList.sections(narrowed, today: today, nextCheckupDay: nextCheckup)
+
+        #expect(narrowed.map(\.title) == ["過ぎた", "今日", "次の健診の日"])
+        #expect(sections.map(\.title) == ["期限を過ぎた", "今日", "11月9日（月）"])
+        #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup, count: narrowed.count) == "次の健診（11月9日）までのやること　3 件")
+    }
+
     // MARK: - 行の文（R-103、R-107）
 
     @Test func showsTheDueDateOnlyForOverdueRows() {

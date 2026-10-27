@@ -190,16 +190,28 @@ nonisolated enum TodoList {
         guard let nextCheckupDay else {
             return nil
         }
-        let counted = entries.filter { entry in
+        let counted = untilNextCheckup(entries, nextCheckupDay: nextCheckupDay)
+        guard !counted.isEmpty else {
+            return nil
+        }
+        return NextCheckupSummary(count: counted.count, overdueCount: counted.filter { $0.isOverdue(today: today) }.count)
+    }
+
+    /// 次の健診までのやること。完了していないもののうち、期限が次の健診の日まで（過ぎたものを含む）。期限なしは入れない。
+    ///
+    /// 健診予定のカードの数（R-110）と、カードの「見る」で開いたときの絞り込み（R-111）で、同じものを使う。
+    static func untilNextCheckup(_ entries: [Entry], nextCheckupDay: CalendarDay) -> [Entry] {
+        entries.filter { entry in
             guard !entry.isCompleted, let dueDay = entry.dueDay else {
                 return false
             }
             return dueDay <= nextCheckupDay
         }
-        guard !counted.isEmpty else {
-            return nil
-        }
-        return NextCheckupSummary(count: counted.count, overdueCount: counted.filter { $0.isOverdue(today: today) }.count)
+    }
+
+    /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）までのやること　2 件」。
+    static func untilNextCheckupTitle(nextCheckupDay: CalendarDay, count: Int) -> String {
+        "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）までのやること　\(count) 件"
     }
 
     // MARK: - 行と見出しの文

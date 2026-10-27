@@ -258,7 +258,8 @@ private struct NextCheckupCard: View {
                         .buttonStyle(.borderless)
                         .fontWeight(.semibold)
                     }
-                    // 次の健診までのやることの数（R-110）。0 件なら出さない。「見る」で「やること」のタブに移る。
+                    // 次の健診までのやることの数（R-110）。0 件なら出さない。
+                    // 「見る」で「やること」のタブに移り、数えたものだけに絞って見せる（R-111）。全部出すと、どれを数えたのかわかりにくいため。
                     if let summary = TodoList.nextCheckupSummary(
                         store.todos.map(\.listEntry),
                         today: CalendarDay(.now),
@@ -276,6 +277,7 @@ private struct NextCheckupCard: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             Button("見る") {
+                                router.showsTodosUntilNextCheckup = true
                                 router.selectedTab = .todo
                             }
                             .buttonStyle(.borderless)

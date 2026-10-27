@@ -5,6 +5,7 @@ import SwiftUI
 /// 一覧は見出しごと：いちばん上に「期限なし」、次に「期限を過ぎた」、そのあと期限の日ごと（並べ方は `TodoList`）。
 /// 丸を押すと緑のチェックが付いてその場に残り、下の「チェックした n 件を完了にする」で「完了したこと」に移る（2 段階、R-104）。
 /// 各行の星の下の「直す」で、足すときと同じシートを開く。左にスワイプで削除し、元に戻すの帯で戻せる（R-105）。
+/// 健診予定のカードの「見る」から開いたときは、次の健診までのやることだけに絞り、上の帯の「すべて表示」で戻す（R-111）。
 struct TodoScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -13,13 +14,19 @@ struct TodoScreen: View {
 
     var body: some View {
         let today = CalendarDay(.now)
+        let nextCheckupDay = store.nextCheckup?.day
         let entries = store.todos.map(\.listEntry)
-        let sections = TodoList.sections(entries, today: today, nextCheckupDay: store.nextCheckup?.day)
+        // 絞り込むのは、次の健診の日付があるときだけ（R-111）。
+        let narrowingDay = router.showsTodosUntilNextCheckup ? nextCheckupDay : nil
+        let shown = narrowingDay.map { TodoList.untilNextCheckup(entries, nextCheckupDay: $0) } ?? entries
+        let sections = TodoList.sections(shown, today: today, nextCheckupDay: nextCheckupDay)
         let completed = TodoList.completed(entries)
         let checkedCount = TodoList.checkedCount(entries)
 
         List {
-            if entries.isEmpty {
+            if let narrowingDay {
+                narrowingBanner(day: narrowingDay, count: shown.count)
+            } else if entries.isEmpty {
                 Section {
                     Text("やることはまだありません。先生に言われた申請や、産院への連絡などを「＋ やることを足す」で書いておきましょう。")
                         .foregroundStyle(.secondary)
@@ -30,11 +37,12 @@ struct TodoScreen: View {
                 sectionView(section, today: today)
             }
 
-            if !completed.isEmpty {
+            // 絞り込んでいる間は、完了したことは出さない（次の健診までのやることだけを見せるため）。
+            if narrowingDay == nil, !completed.isEmpty {
                 completedSection(completed)
             }
 
-            if !entries.isEmpty {
+            if narrowingDay == nil, !entries.isEmpty {
                 Section {
                 } footer: {
                     Text("丸を押すと緑のチェックが付きます。下の「完了にする」で「完了したこと」に移ります。「直す」で期限などを直せます。左にスワイプで削除できます。")
@@ -90,6 +98,39 @@ struct TodoScreen: View {
             .animation(.default, value: store.pendingUndo)
             .animation(.default, value: checkedCount)
         }
+        // ほかのタブに移ったら、絞り込みをやめる。次にタブから開いたときは、すべてを出す。
+        .onChange(of: router.selectedTab) { _, tab in
+            if tab != .todo {
+                router.showsTodosUntilNextCheckup = false
+            }
+        }
+    }
+
+    /// 絞り込んでいるときに一覧の上に出す帯（R-111）。何に絞っているかと、「すべて表示」。
+    private func narrowingBanner(day: CalendarDay, count: Int) -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(TodoList.untilNextCheckupTitle(nextCheckupDay: day, count: count))
+                    .font(.maru(.headline))
+                    .fixedSize(horizontal: false, vertical: true)
+                if count == 0 {
+                    Text("次の健診までのやることは、もうありません。")
+                        .font(.maru(.subheadline))
+                        .foregroundStyle(.secondary)
+                }
+                Button {
+                    withAnimation {
+                        router.showsTodosUntilNextCheckup = false
+                    }
+                } label: {
+                    Text("すべて表示")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.vertical, 4)
+        }
+        .listRowBackground(AppColors.skyCard)
     }
 
     /// 見出し 1 つ分。次の健診の線は、見出しのない 1 行にする。
