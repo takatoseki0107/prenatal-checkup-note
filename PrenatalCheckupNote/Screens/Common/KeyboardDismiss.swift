@@ -48,13 +48,20 @@ private struct KeyboardDismissBar: ViewModifier {
                     } label: {
                         Text("完了")
                             .font(.maru(.headline))
+                            .foregroundStyle(Color.accentColor)
                             .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            // 透けるボタンだと、後ろの一覧の文字（「写真を足す」など）が重なって見えた（実機で開発者が見つけた）。
+                            // 透けない地の色で塗り、細い枠で区切る。
+                            .background(Capsule().fill(AppColors.card))
+                            .overlay(Capsule().strokeBorder(Color.accentColor.opacity(0.35)))
+                            .contentShape(Capsule())
                     }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
-                    .controlSize(.large)
+                    .buttonStyle(.plain)
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 8)
+                    // 帯ごと背景の色で塗り、後ろの一覧が透けて見えないようにする。
+                    .background(AppColors.background)
                     .accessibilityHint("キーボードを閉じます")
                     .transition(.opacity)
                 }
