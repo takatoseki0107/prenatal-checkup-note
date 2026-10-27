@@ -120,13 +120,14 @@ final class NoteService {
         }
     }
 
-    /// 質問・健診後メモ・次の健診・書きかけのどれかがあるか。
+    /// 質問・健診後メモ・次の健診・書きかけ・やることのどれかがあるか。
     private func hasAnyRecord() throws -> Bool {
         try !questions().isEmpty
             || !memos().isEmpty
             || nextCheckup() != nil
             || memoDraft() != nil
             || questionDraft() != nil
+            || !todos().isEmpty
     }
 
     // MARK: - 聞きたいこと
@@ -468,6 +469,109 @@ final class NoteService {
         }
     }
 
+    // MARK: - やること
+
+    /// すべてのやること（完了したものも含む）。足した順。並べ方は画面の前に `TodoList` で決める。
+    func todos() throws -> [TodoItem] {
+        try context.fetch(FetchDescriptor<TodoItem>(sortBy: [SortDescriptor(\.createdAt)]))
+    }
+
+    /// やることを足す（R-101）。期限は選んだ日付をそのまま入れる（R-102）。
+    ///
+    /// - Parameter originVisitDay: 健診後メモから足すとき、そのメモの受診日（R-107）。
+    @discardableResult
+    func addTodo(
+        title: String,
+        note: String = "",
+        dueDay: CalendarDay?,
+        isStarred: Bool = false,
+        originVisitDay: CalendarDay? = nil,
+        now: Date
+    ) throws -> UUID {
+        guard let title = InputText.normalized(title) else {
+            throw NoteServiceError.emptyText
+        }
+        return try perform { () throws -> UUID in
+            let todo = TodoItem(
+                title: title,
+                note: InputText.normalized(note) ?? "",
+                dueDay: dueDay,
+                isStarred: isStarred,
+                originVisitDay: originVisitDay,
+                createdAt: now
+            )
+            context.insert(todo)
+            return todo.id
+        }
+    }
+
+    /// やることを直す（R-101）。文・補足・期限・大事な印。チェックや完了、どこから足したかは変えない。
+    func updateTodo(id: UUID, title: String, note: String, dueDay: CalendarDay?, isStarred: Bool) throws {
+        guard let title = InputText.normalized(title) else {
+            throw NoteServiceError.emptyText
+        }
+        try perform {
+            let todo = try requireTodo(id: id)
+            todo.title = title
+            todo.note = InputText.normalized(note) ?? ""
+            todo.dueDayNumber = dueDay?.number
+            todo.isStarred = isStarred
+        }
+    }
+
+    /// 緑のチェックを付ける・外す（完了の 1 段階目。R-104）。一覧のその場に残る。
+    func setTodoChecked(_ isChecked: Bool, todoID: UUID) throws {
+        try perform {
+            try requireTodo(id: todoID).isChecked = isChecked
+        }
+    }
+
+    /// 大事な印（星）を付ける・外す。
+    func setTodoStarred(_ isStarred: Bool, todoID: UUID) throws {
+        try perform {
+            try requireTodo(id: todoID).isStarred = isStarred
+        }
+    }
+
+    /// チェックしたやることを、まとめて完了にする（完了の 2 段階目。R-104）。完了にした数を返す。元に戻せる。
+    ///
+    /// チェックしたものがなければ、何もせず保存もしない（前の操作の「元に戻す」を消さないため）。
+    @discardableResult
+    func completeCheckedTodos(now: Date) throws -> Int {
+        let checked = try todos().filter { $0.isChecked && !$0.isCompleted }
+        guard !checked.isEmpty else {
+            return 0
+        }
+        let ids = checked.map(\.id)
+        try perform {
+            for todo in checked {
+                todo.completedAt = now
+                todo.isChecked = false
+            }
+        }
+        pendingUndo = .completedTodos(ids: ids)
+        return ids.count
+    }
+
+    /// 完了を取り消して、一覧に戻す（「完了したこと」の丸を押したとき。R-104）。チェックは外れた状態で戻る。
+    func reopenTodo(id: UUID) throws {
+        try perform {
+            let todo = try requireTodo(id: id)
+            todo.completedAt = nil
+            todo.isChecked = false
+        }
+    }
+
+    /// やることを削除する（R-105）。確認は出さず、元に戻せる。
+    func deleteTodo(id: UUID) throws {
+        let todo = try requireTodo(id: id)
+        let snapshot = todo.snapshot
+        try perform {
+            context.delete(todo)
+        }
+        pendingUndo = .deletedTodo(snapshot)
+    }
+
     // MARK: - 設定
 
     /// 「はじめに」を終える。出産予定日を入れたときだけ、それを残す（「あとで入れる」なら `nil`）。
@@ -613,6 +717,17 @@ final class NoteService {
                     )
                     context.insert(item)
                     item.memo = memo
+                }
+
+            case .deletedTodo(let snapshot):
+                context.insert(TodoItem(snapshot))
+
+            case .completedTodos(let ids):
+                // 完了を取り消し、完了にする前と同じ、緑のチェックが付いた状態に戻す。
+                let completedIDs = Set(ids)
+                for todo in try todos() where completedIDs.contains(todo.id) {
+                    todo.completedAt = nil
+                    todo.isChecked = true
                 }
             }
         }
@@ -787,5 +902,12 @@ final class NoteService {
             throw NoteServiceError.notFound
         }
         return question
+    }
+
+    private func requireTodo(id: UUID) throws -> TodoItem {
+        guard let todo = try context.fetch(FetchDescriptor<TodoItem>(predicate: #Predicate<TodoItem> { todo in todo.id == id })).first else {
+            throw NoteServiceError.notFound
+        }
+        return todo
     }
 }

@@ -15,6 +15,8 @@ enum AppDataStore {
         QuestionDraft.self,
         // 段階 E で足した。足すだけなので、いまのデータはそのまま開ける（自動の移行）。
         MemoPhoto.self,
+        // やること（5.10）で足した。これも足すだけなので、いまのデータはそのまま開ける。
+        TodoItem.self,
     ])
 
     /// 指定の場所に保存するコンテナ。iCloud とは同期しない（1 章）。

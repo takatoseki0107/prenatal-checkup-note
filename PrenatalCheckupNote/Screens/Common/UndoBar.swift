@@ -50,6 +50,10 @@ extension PendingUndo {
             "写真を外しました"
         case .clearedDueDate:
             "出産予定日を消しました"
+        case .deletedTodo(let todo):
+            "「\(todo.title)」を削除しました"
+        case .completedTodos(let ids):
+            "\(ids.count) 件を完了にしました"
         }
     }
 }
