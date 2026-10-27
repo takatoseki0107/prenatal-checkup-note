@@ -235,20 +235,28 @@ struct TodoScreen: View {
     }
 }
 
-/// 見出し。「期限を過ぎた」はオレンジ、今日と次の健診の日は強調の色で出す。日付などを横に添える。
+/// 見出し。どれも同じ大きさ・同じ色にそろえ、色を変えるのは「期限を過ぎた」（オレンジ）だけにする。
+/// 次の健診の日は、見出しの横に小さな青い札「次の健診の日」を付けて目印にする。
+///
+/// 最初は、今日と次の健診の日を青、ほかを白、添える日付を小さな灰色にしていたが、並べると色と大きさがばらばらに見えた
+/// （実機で開発者が指摘）。日付も読みやすいよう、見出しと同じ大きさにしている。
 private struct SectionHeader: View {
     let section: TodoList.Section
     let today: CalendarDay
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(section.title)
-                .font(.maru(.subheadline).weight(.semibold))
-                .foregroundStyle(titleColor)
-            if let subtitle = section.subtitle {
-                Text(subtitle)
-                    .font(.maru(.footnote))
-                    .foregroundStyle(.secondary)
+            Text(headerText)
+                .font(.maru(.callout))
+                .foregroundStyle(isOverdue ? Color.orange : Color.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            if isNextCheckupDay {
+                Text("次の健診の日")
+                    .font(.maru(.caption))
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Color.accentColor.opacity(0.18)))
             }
         }
         .textCase(nil)
@@ -256,15 +264,23 @@ private struct SectionHeader: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private var titleColor: Color {
-        switch section.kind {
-        case .overdue:
-            .orange
-        case .day(let day, let isNextCheckupDay):
-            isNextCheckupDay || day == today ? Color.accentColor : .primary
-        case .noDue, .nextCheckupLine:
-            .secondary
+    /// 例：「期限を過ぎた」「今日　10月27日（火）」「明日　10月28日（水）」「11月4日（水）」。
+    private var headerText: String {
+        guard let subtitle = section.subtitle else {
+            return section.title
         }
+        return "\(section.title)　\(subtitle)"
+    }
+
+    private var isOverdue: Bool {
+        section.kind == .overdue
+    }
+
+    private var isNextCheckupDay: Bool {
+        if case .day(_, true) = section.kind {
+            return true
+        }
+        return false
     }
 }
 
