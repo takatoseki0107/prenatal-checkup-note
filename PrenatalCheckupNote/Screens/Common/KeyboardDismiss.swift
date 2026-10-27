@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 
@@ -21,5 +22,18 @@ extension View {
                     .fontWeight(.semibold)
                 }
             }
+    }
+
+    /// キーボードが出た・閉じたことを知らせる。画面の下の帯を、入力中だけ隠すのに使う。
+    ///
+    /// 入力中に下の帯（保存のボタンなど）を出したままにすると、帯がキーボードの上に乗って入力欄が狭くなり、
+    /// キーボードの上の「完了」とも重なって見えた（実機で開発者が見つけた）。
+    func onKeyboardVisibilityChange(_ action: @escaping (Bool) -> Void) -> some View {
+        onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            action(true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            action(false)
+        }
     }
 }

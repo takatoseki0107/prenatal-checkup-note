@@ -21,6 +21,8 @@ struct WriteMemoSheet: View {
     @State private var isConfirmingDiscard = false
     /// 読み込んでいる写真の数。0 でなければ保存できない（段階 E の決まり）。
     @State private var loadingPhotoCount = 0
+    /// キーボードが出ているか。出ている間は、下の保存の帯を隠す。
+    @State private var isKeyboardShown = false
 
     var body: some View {
         NavigationStack {
@@ -65,7 +67,15 @@ struct WriteMemoSheet: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                saveBar
+                // 入力中は保存の帯を隠し、入力欄を広く使う。キーボードを閉じると出てくる。
+                if !isKeyboardShown {
+                    saveBar
+                }
+            }
+            .onKeyboardVisibilityChange { shown in
+                withAnimation(.easeOut(duration: 0.2)) {
+                    isKeyboardShown = shown
+                }
             }
             .onAppear(perform: loadDraft)
             // 入力が 1 秒ほど止まったら、入力途中のメモを保存する（R-70）。変わるたびに待ち直す。
