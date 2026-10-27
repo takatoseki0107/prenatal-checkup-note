@@ -32,7 +32,11 @@ final class CoreFlowUITests: XCTestCase {
         XCTAssertTrue(body.waitForExistence(timeout: timeout))
         body.tap()
         body.typeText("様子見でよい")
-        app.buttons["メモと質問 1 件を保存"].tap()
+        // 入力中は保存の帯が隠れるので、キーボードの上の「完了」で閉じてから保存する（段階 F）。
+        app.buttons["完了"].firstMatch.tap()
+        let saveButton = app.buttons["メモと質問 1 件を保存"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: timeout))
+        saveButton.tap()
 
         // 丸を付けた質問はメモに移り、一覧から外れる。
         XCTAssertTrue(element(labelContaining: "聞きたいこと（0件）", in: app).waitForExistence(timeout: timeout))
