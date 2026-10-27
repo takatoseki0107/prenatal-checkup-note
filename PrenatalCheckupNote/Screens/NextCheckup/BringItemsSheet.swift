@@ -45,6 +45,8 @@ struct BringItemsSheet: View {
                 .listRowBackground(AppColors.card)
             }
             .appBackground()
+            // キーボードを閉じる「完了」と、引っぱって閉じる動き（段階 F）。
+            .keyboardDismissTools()
             .navigationTitle("持ち物")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -42,6 +42,8 @@ struct AddQuestionSheet: View {
                 .listRowBackground(AppColors.card)
             }
             .appBackground()
+            // キーボードを閉じる「完了」と、引っぱって閉じる動き（段階 F）。
+            .keyboardDismissTools()
             .navigationTitle("質問を追加")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

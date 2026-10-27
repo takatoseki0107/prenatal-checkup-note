@@ -35,8 +35,8 @@ struct PastCheckupsScreen: View {
         // メモ 1 件ずつを、間を空けた丸いカードにする（段階 F）。
         .listRowSpacing(10)
         .appBackground()
-        // 一覧を動かしたら、検索の欄のキーボードを閉じる。
-        .scrollDismissesKeyboard(.immediately)
+        // キーボードを閉じる「完了」と、引っぱって閉じる動き（段階 F）。
+        .keyboardDismissTools()
         .onScrolledPastHeader { isShowingInlineTitle = $0 }
         .screenHeaderTitle("健診の記録", isShown: isShowingInlineTitle)
         .toolbar {
