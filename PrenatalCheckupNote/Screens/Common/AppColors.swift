@@ -29,8 +29,6 @@ enum AppColors {
     /// 印の色。黄色と空色の四角の上でも見えるよう、ライトでは濃い色にしている。
     static let headerIconYellow = Color("HeaderIconYellow")
     static let headerIconSky = Color("HeaderIconSky")
-    /// 健診の記録の、キラッとした飾りの色（ほかの 2 つは `pink` と `star` を使う）。
-    static let headerSparkSky = Color("HeaderSparkSky")
 }
 
 /// アプリの字体（段階 F）。iPhone に最初から入っている丸い字体「ヒラギノ丸ゴ」を使う。
