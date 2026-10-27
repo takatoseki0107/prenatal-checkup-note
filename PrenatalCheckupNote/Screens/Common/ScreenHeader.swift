@@ -96,7 +96,10 @@ struct ScreenHeader: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.vertical, 4)
+        // 一覧の行は、まわりの角を丸く切り取られる。印の四角が行の左はしにあると、四角の左の角まで切られて形がくずれた
+        // （実機で開発者が見つけた）。上下と左に少し余白をとって、四角が切り取られる角にかからないようにする。
+        .padding(.vertical, 10)
+        .padding(.leading, 4)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowSeparator(.hidden)

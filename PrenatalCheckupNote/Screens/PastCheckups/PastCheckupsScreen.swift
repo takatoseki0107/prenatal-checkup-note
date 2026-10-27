@@ -242,6 +242,9 @@ private struct SearchField: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
         .background(Capsule().fill(AppColors.card))
+        // 見出しと同じく、行の丸い角に欄の左右のはしが切り取られないよう、少し余白をとる。
+        .padding(.vertical, 4)
+        .padding(.horizontal, 2)
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowSeparator(.hidden)
