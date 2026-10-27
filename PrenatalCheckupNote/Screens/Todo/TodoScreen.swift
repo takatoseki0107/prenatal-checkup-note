@@ -252,10 +252,13 @@ private struct NextCheckupLine: View {
     var body: some View {
         HStack(spacing: 8) {
             line
+            // 文は 1 行のまま出し、線のほうを短くする（両側の線に幅を取られて、文が 2 行に折り返していた）。
             Text(title)
                 .font(.maru(.footnote).weight(.semibold))
                 .foregroundStyle(Color.accentColor)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
             line
         }
         .padding(.vertical, 4)
@@ -265,6 +268,7 @@ private struct NextCheckupLine: View {
     private var line: some View {
         Rectangle()
             .fill(Color.accentColor.opacity(0.35))
+            .frame(minWidth: 12, maxWidth: .infinity)
             .frame(height: 1)
     }
 }
@@ -327,11 +331,19 @@ private struct TodoRow: View {
                 .accessibilityHint(entry.isStarred ? "押すと星を外します" : "押すと星を付けます")
 
                 // 文・期限・補足・印を直す。削除もここからできる（R-101、R-105）。
-                Button("直す") {
+                // 文字だけだと押しにくい（開発者の指摘）ので、枠のある丸いボタンにして、押せる範囲も広げる。
+                Button {
                     router.sheet = .editTodo(entry.id)
+                } label: {
+                    Label("直す", systemImage: "pencil")
+                        .font(.maru(.caption).weight(.semibold))
+                        .labelStyle(.titleAndIcon)
+                        .lineLimit(1)
                 }
-                .font(.maru(.caption).weight(.semibold))
-                .buttonStyle(.borderless)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .contentShape(Capsule().inset(by: -6))
                 .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .accessibilityLabel("「\(entry.title)」を直す")
             }
