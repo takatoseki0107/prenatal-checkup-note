@@ -21,7 +21,7 @@ struct MemoDetailSheet: View {
     @State private var isConfirmingDelete = false
     /// 直す画面で、読み込んでいる写真の数。0 でなければ保存できない。
     @State private var loadingPhotoCount = 0
-    /// 「やることを足す」のシートを開いているか（R-107）。
+    /// 「タスクを追加」のシートを開いているか（R-107）。
     @State private var isAddingTodo = false
 
     var body: some View {
@@ -87,7 +87,7 @@ struct MemoDetailSheet: View {
                 }
             }
             .animation(.default, value: store.pendingUndo)
-            // 「＋ やることに足す」で開く。足したやることには、このメモの受診日が付く（R-107）。
+            // 「＋ タスクを追加」で開く。追加したタスクには、このメモの受診日が付く（R-107）。
             .sheet(isPresented: $isAddingTodo) {
                 if let memo, let visitDay = memo.visitDay {
                     TodoSheet(mode: .addFromMemo(memoID: memo.id, visitDay: visitDay))
@@ -269,7 +269,7 @@ private struct MemoView: View {
     let photos: [MemoPhoto]
     /// 「妊娠週数を表示する」。オフなら、共有の文章にも週数を入れない。
     let isAgeShown: Bool
-    /// 「＋ やることに足す」を押したとき（R-107）。
+    /// 「＋ タスクを追加」を押したとき（R-107）。
     let onAddTodo: () -> Void
 
     /// 大きく出している写真。出していなければ `nil`。
@@ -284,7 +284,7 @@ private struct MemoView: View {
                             .textSelection(.enabled)
                     }
                 }
-                // 先生に言われた「次までにすること」を、あとからでもやることに足せる（R-107）。
+                // 先生に言われた「次までにすること」を、あとからでもタスクとして追加できる（R-107）。
                 MemoTodosSection(memoID: memo.id, onAdd: onAddTodo)
                 if !photos.isEmpty {
                     Section {

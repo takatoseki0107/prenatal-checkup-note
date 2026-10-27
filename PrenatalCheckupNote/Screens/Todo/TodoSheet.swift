@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// やることを足す・直すシート（要件定義 v0.4 の 5.10、R-101、R-102、R-105）。
+/// タスクを追加・直すシート（要件定義 v0.4 の 5.10、R-101、R-102、R-105）。
 ///
-/// 「＋ やることを足す」で「やることを足す」、各行の「直す」で「やることを直す」として開く。
+/// 「＋ タスクを追加」で「タスクを追加」、各行の「直す」で「タスクを直す」として開く。
 /// 期限はボタン（期限なし・今日・明日・次の健診まで・1 週間後・日付を選ぶ）で選び、選んだ期限をすぐ下に文で見せる。
 /// 期限には選んだときの日付をそのまま入れる（ADR 0012）。直すときは、削除もここからできる（確認なし、元に戻すの帯で戻せる）。
 /// 書きかけは残さない（「追加」「保存」を押したときだけ保存する）。
-/// 健診後メモの画面の「＋ やることに足す」からは、そのメモの受診日と ID を持って開く（R-107）。
+/// 健診後メモの画面の「＋ タスクを追加」からは、そのメモの受診日と ID を持って開く（R-107）。
 struct TodoSheet: View {
     nonisolated enum Mode: Equatable {
         case add
@@ -40,13 +40,13 @@ struct TodoSheet: View {
                     form
                 } else {
                     ContentUnavailableView(
-                        "このやることは見つかりませんでした",
+                        "このタスクは見つかりませんでした",
                         systemImage: "checklist",
                         description: Text("削除された可能性があります。")
                     )
                 }
             }
-            .navigationTitle(isEditing ? "やることを直す" : "やることを足す")
+            .navigationTitle(isEditing ? "タスクを直す" : "タスクを追加")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -91,7 +91,7 @@ struct TodoSheet: View {
                     VStack(alignment: .leading, spacing: 10) {
                         // 健診後メモから開いたときは、どの健診で言われたこととして足すかを先に見せる（R-107）。
                         if let memoVisitDay {
-                            Text("\(memoVisitDay.month)月\(memoVisitDay.day)日の健診で言われたこととして足します")
+                            Text("\(memoVisitDay.month)月\(memoVisitDay.day)日の健診で言われたこととして追加します")
                                 .font(.maru(.footnote))
                                 .foregroundStyle(Color.accentColor)
                                 .padding(.horizontal, 12)
@@ -99,7 +99,7 @@ struct TodoSheet: View {
                                 .background(Capsule().fill(Color.accentColor.opacity(0.15)))
                                 .textCase(nil)
                         }
-                        Text("やること")
+                        Text("タスク")
                     }
                 }
 
@@ -148,7 +148,7 @@ struct TodoSheet: View {
 
                 if isEditing {
                     Section {
-                        Button("このやることを削除する", role: .destructive) {
+                        Button("このタスクを削除する", role: .destructive) {
                             delete()
                         }
                     } footer: {

@@ -10,8 +10,8 @@ struct ScreenHeaderTextTests {
 
     @Test func countsTodosUntilTheNextCheckupFirst() {
         #expect(ScreenHeaderText.todo(untilNextCheckupCount: 3, openCount: 4) == "次の健診までに 3 件")
-        #expect(ScreenHeaderText.todo(untilNextCheckupCount: nil, openCount: 2) == "やること 2 件")
-        #expect(ScreenHeaderText.todo(untilNextCheckupCount: 0, openCount: 1) == "やること 1 件")
+        #expect(ScreenHeaderText.todo(untilNextCheckupCount: nil, openCount: 2) == "タスク 2 件")
+        #expect(ScreenHeaderText.todo(untilNextCheckupCount: 0, openCount: 1) == "タスク 1 件")
         #expect(ScreenHeaderText.todo(untilNextCheckupCount: nil, openCount: 0) == "健診と健診の間にすること")
     }
 

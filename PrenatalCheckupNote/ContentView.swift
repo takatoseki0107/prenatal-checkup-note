@@ -8,10 +8,10 @@
 import SwiftData
 import SwiftUI
 
-/// アプリの一番下の画面。下の 3 つのタブ「健診予定」「やること」「健診の記録」と、シートを受け持つ（要件定義 v0.4 の 4 章、R-100）。
+/// アプリの一番下の画面。下の 3 つのタブ「健診予定」「タスク」「健診の記録」と、シートを受け持つ（要件定義 v0.4 の 4 章、R-100）。
 ///
 /// タブの名前は、段階 F で「次の健診」「これまでの健診」から変えた（画面の名前とカードの見出しで同じ言葉がくり返されるため）。
-/// 「やること」は 5.10 で足した。タブには、完了していない「期限を過ぎた」と「今日」のやることの数を出す（R-106）。
+/// 「タスク」（コードでは Todo）は 5.10 で足した。タブには、完了していない「期限を過ぎた」と「今日」のやることの数を出す（R-106）。
 ///
 /// シートはここで 1 か所にまとめて開く。失敗の知らせは、シートを開いていないときだけここで出し、
 /// 開いているときはシートの側で出す（`noteErrorAlert`）。
@@ -30,7 +30,7 @@ struct ContentView: View {
                     NextCheckupScreen()
                 }
             }
-            Tab("やること", systemImage: "checklist", value: AppRouter.Tab.todo) {
+            Tab("タスク", systemImage: "checklist", value: AppRouter.Tab.todo) {
                 NavigationStack {
                     TodoScreen()
                 }
@@ -91,7 +91,7 @@ struct ContentView: View {
         .environment(router)
     }
 
-    /// 「やること」のタブに出す数（R-106）。
+    /// 「タスク」のタブに出す数（R-106）。
     private var todoBadgeCount: Int {
         TodoList.badgeCount(store.todos.map(\.listEntry), today: CalendarDay(.now))
     }

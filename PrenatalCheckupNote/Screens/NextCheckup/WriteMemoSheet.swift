@@ -23,7 +23,7 @@ struct WriteMemoSheet: View {
     @State private var loadingPhotoCount = 0
     /// キーボードが出ているか。出ている間は、下の保存の帯を隠す。
     @State private var isKeyboardShown = false
-    /// 「やることを足す」のシートを開いているか（R-107）。
+    /// 「タスクを追加」のシートを開いているか（R-107）。
     @State private var isAddingTodo = false
 
     var body: some View {
@@ -37,7 +37,7 @@ struct WriteMemoSheet: View {
                             // 画面のテストで、この欄を見つけるための名前。
                             .accessibilityIdentifier("memoBodyField")
                     }
-                    // 先生に言われた「次までにすること」を、ここからやることに足せる（R-107）。
+                    // 先生に言われた「次までにすること」を、ここからタスクとして追加できる（R-107）。
                     if let draftID = store.memoDraft?.id {
                         MemoTodosSection(memoID: draftID) {
                             isAddingTodo = true
@@ -80,7 +80,7 @@ struct WriteMemoSheet: View {
                     saveBar
                 }
             }
-            // 「＋ やることに足す」で開く。受診日は、いま画面で選んでいる日（R-107）。
+            // 「＋ タスクを追加」で開く。受診日は、いま画面で選んでいる日（R-107）。
             .sheet(isPresented: $isAddingTodo) {
                 if let draftID = store.memoDraft?.id {
                     TodoSheet(mode: .addFromMemo(memoID: draftID, visitDay: visitDay))

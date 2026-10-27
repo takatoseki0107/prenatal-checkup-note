@@ -259,7 +259,7 @@ private struct NextCheckupCard: View {
                         .fontWeight(.semibold)
                     }
                     // 次の健診までのやることの数（R-110）。0 件なら出さない。
-                    // 「見る」で「やること」のタブに移り、数えたものだけに絞って見せる（R-111）。全部出すと、どれを数えたのかわかりにくいため。
+                    // 「見る」で「タスク」のタブに移り、数えたものだけに絞って見せる（R-111）。全部出すと、どれを数えたのかわかりにくいため。
                     if let summary = TodoList.nextCheckupSummary(
                         store.todos.map(\.listEntry),
                         today: CalendarDay(.now),
@@ -282,7 +282,7 @@ private struct NextCheckupCard: View {
                             }
                             .buttonStyle(.borderless)
                             .fontWeight(.semibold)
-                            .accessibilityLabel("やることを見る")
+                            .accessibilityLabel("タスクを見る")
                         }
                     }
                     if let input = store.reminderInput {
