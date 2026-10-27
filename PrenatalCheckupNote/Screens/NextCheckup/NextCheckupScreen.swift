@@ -2,36 +2,31 @@ import SwiftUI
 
 /// タブ 1「健診予定」（要件定義 v0.4 の 4 章。段階 F で「次の健診」から名前を変えた）。
 ///
-/// いちばん上に次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
-/// 行を押すと質問のシートを開く。出産予定日があれば、いちばん上に今日の妊娠週数を出す（R-51）。
+/// いちばん上に見出し（`ScreenHeader`）、次の健診のカード、その下に「聞きたいこと」の一覧、画面の下に「＋ 質問を追加」「健診後メモを書く」。
+/// 行を押すと質問のシートを開く。出産予定日があれば、見出しの一言に今日の妊娠週数を出す（R-51）。
 /// カードの 3 行目は、前日の夜のお知らせとスイッチ（段階 C）。
 /// 持ち物とお知らせの間に、次の健診までのやることの数を出す（R-110。0 件なら出さない）。
 struct NextCheckupScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
     @Environment(\.dynamicTypeSize) private var typeSize
+    /// 見出しが隠れて、上の帯に題名を出しているか。
+    @State private var isShowingInlineTitle = false
 
     var body: some View {
         List {
-            if let todayAgeText = store.gestationalAgeText(on: CalendarDay(.now)) {
-                Section {
-                    HStack(spacing: 6) {
-                        Image(systemName: "heart.fill")
-                            .foregroundStyle(AppColors.pink)
-                            .accessibilityHidden(true)
-                        Text("今日は \(todayAgeText)")
-                    }
-                    .font(.maru(.subheadline).weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(.background))
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                }
-                // 今日の週数と、すぐ下のカードの間を詰める。
-                .listSectionSpacing(.compact)
+            // 見出し（題名・印・一言）。週数を出すときは、一言を「♡ 今日は 妊娠 n 週 n 日」にする（R-51）。
+            Section {
+                let todayAgeText = store.gestationalAgeText(on: CalendarDay(.now))
+                ScreenHeader(
+                    kind: .next,
+                    title: "健診予定",
+                    subtitle: ScreenHeaderText.next(todayAgeText: todayAgeText),
+                    showsHeart: todayAgeText != nil
+                )
             }
+            // 見出しと、すぐ下のカードの間を詰める。
+            .listSectionSpacing(.compact)
 
             NextCheckupCard()
 
@@ -65,7 +60,8 @@ struct NextCheckupScreen: View {
         // このため、健診予定のカードは 1 つの行にまとめている（`NextCheckupCard`）。
         .listRowSpacing(10)
         .appBackground()
-        .navigationTitle("健診予定")
+        .onScrolledPastHeader { isShowingInlineTitle = $0 }
+        .screenHeaderTitle("健診予定", isShown: isShowingInlineTitle)
         .toolbar {
             // 聞きたいことの一覧を文章で共有する（段階 D）。質問がなければ押せない。
             ToolbarItem(placement: .topBarTrailing) {

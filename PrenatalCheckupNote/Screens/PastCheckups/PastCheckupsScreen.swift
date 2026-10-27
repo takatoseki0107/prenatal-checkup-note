@@ -4,15 +4,28 @@ import SwiftUI
 ///
 /// 健診後メモの一覧（新しい順）。行を押すと、見る・直す・削除するシートを開く（B5）。
 /// 出産予定日があれば、各行に記録したときの予定日で計算した週数を出す（R-52）。
-/// 一覧の上の検索の欄で、本文・聞いた質問・補足・先生の答えから探せる（段階 D1、決まりは `MemoSearch`）。
+/// 見出しのすぐ下の検索の欄で、本文・聞いた質問・補足・先生の答えから探せる（段階 D1、決まりは `MemoSearch`）。
+/// 検索の欄は iOS 標準（`.searchable`）だと見出しより上に出てしまうので、自分で作って見出しの下に置いている（段階 F）。
 struct PastCheckupsScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
     /// 検索の欄に入れた文。
     @State private var query = ""
+    /// 見出しが隠れて、上の帯に題名を出しているか。
+    @State private var isShowingInlineTitle = false
 
     var body: some View {
         List {
+            Section {
+                ScreenHeader(kind: .past, title: "健診の記録", subtitle: ScreenHeaderText.past(memoCount: store.memos.count))
+            }
+            .listSectionSpacing(.compact)
+
+            Section {
+                SearchField(text: $query, prompt: "メモを探す（例：むくみ 足）")
+            }
+            .listSectionSpacing(.compact)
+
             if let results = searchResults {
                 searchResultsSection(results)
             } else {
@@ -22,8 +35,10 @@ struct PastCheckupsScreen: View {
         // メモ 1 件ずつを、間を空けた丸いカードにする（段階 F）。
         .listRowSpacing(10)
         .appBackground()
-        .navigationTitle("健診の記録")
-        .searchable(text: $query, prompt: "メモを探す（例：むくみ 足）")
+        // 一覧を動かしたら、検索の欄のキーボードを閉じる。
+        .scrollDismissesKeyboard(.immediately)
+        .onScrolledPastHeader { isShowingInlineTitle = $0 }
+        .screenHeaderTitle("健診の記録", isShown: isShowingInlineTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -193,5 +208,38 @@ private struct MemoRow: View {
     private var preview: String {
         let firstLine = memo.body.split(separator: "\n", omittingEmptySubsequences: true).first.map(String.init)
         return firstLine ?? "（先生の話のメモなし）"
+    }
+}
+
+/// 見出しの下に置く検索の欄。虫めがねの印、入力の欄、入力があるときだけ出る × のボタン。
+private struct SearchField: View {
+    @Binding var text: String
+    let prompt: String
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField(prompt, text: $text)
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+                .accessibilityLabel("メモを探す")
+            if !text.isEmpty {
+                Button {
+                    text = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("検索の言葉を消す")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+        .listRowSeparator(.hidden)
     }
 }
