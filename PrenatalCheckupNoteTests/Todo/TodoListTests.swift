@@ -264,7 +264,7 @@ struct TodoListTests {
 
         #expect(narrowed.map(\.title) == ["過ぎた", "今日", "次の健診の日"])
         #expect(sections.map(\.title) == ["期限を過ぎた", "今日", "11月9日（月）"])
-        #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup) == "次の健診（11月9日）までのやること")
+        #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup) == "次の健診（11月9日）まで")
         // 完了したものは「ほか」に数えない。
         #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "ほかのやること（2 件）も表示")
     }

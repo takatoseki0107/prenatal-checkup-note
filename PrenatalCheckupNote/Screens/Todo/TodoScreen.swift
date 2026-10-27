@@ -332,18 +332,26 @@ private struct TodoRow: View {
 
                 // 文・期限・補足・印を直す。削除もここからできる（R-101、R-105）。
                 // 文字だけだと押しにくい（開発者の指摘）ので、枠のある丸いボタンにして、押せる範囲も広げる。
+                // 印と文の間を詰め、ボタンの幅を小さくして、やることの文の幅をせばめないようにする。
                 Button {
                     router.sheet = .editTodo(entry.id)
                 } label: {
-                    Label("直す", systemImage: "pencil")
-                        .font(.maru(.caption).weight(.semibold))
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
+                    HStack(spacing: 2) {
+                        Image(systemName: "pencil")
+                        Text("直す")
+                    }
+                    .font(.maru(.caption).weight(.semibold))
+                    .lineLimit(1)
+                    .foregroundStyle(Color.accentColor)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                    // 見た目より少し広い範囲で押せるようにする。
+                    .padding(4)
+                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .controlSize(.small)
-                .contentShape(Capsule().inset(by: -6))
+                .buttonStyle(.plain)
+                .padding(-4)
                 .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .accessibilityLabel("「\(entry.title)」を直す")
             }

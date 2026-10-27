@@ -209,9 +209,11 @@ nonisolated enum TodoList {
         }
     }
 
-    /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）までのやること」。数は横に大きく出す。
+    /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）まで」。数は横に大きく出す。
+    ///
+    /// 画面の題名が「やること」なので、「のやること」は付けない（付けると、数と並べたときに「やる／こと」で折り返した）。
     static func untilNextCheckupTitle(nextCheckupDay: CalendarDay) -> String {
-        "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）までのやること"
+        "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）まで"
     }
 
     /// 絞り込みをやめるボタンの文（R-111）。ほかに完了していないやることがあれば、その数を出す。
