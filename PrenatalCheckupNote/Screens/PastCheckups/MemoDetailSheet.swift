@@ -113,46 +113,50 @@ struct MemoDetailSheet: View {
 
     private var editForm: some View {
         Form {
-            Section {
-                DatePicker("受診日", selection: $visitDate, displayedComponents: .date)
-                    // 日付はグレゴリオ暦・日本時間で決める（R-90）。
-                    .environment(\.calendar, .japan)
-                    .environment(\.timeZone, Calendar.japan.timeZone)
-            }
-            Section("先生から聞いたこと・次までにすること") {
-                TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
-                    .lineLimit(4...)
-            }
-            MemoPhotosSection(
-                memoID: memoID,
-                photos: store.photos(forMemo: memoID),
-                loadingCount: $loadingPhotoCount,
-                footer: "写真は、足す・外すとすぐ保存されます（「キャンセル」でも戻りません）。外した写真は、下の「元に戻す」で戻せます。"
-            )
-            if !items.isEmpty {
-                Section("この健診で聞いたこと") {
-                    ForEach($items) { $item in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("質問\(item.number)")
-                                .font(.maru(.caption))
-                                .foregroundStyle(.secondary)
-                            TextField("質問", text: $item.questionText, axis: .vertical)
-                            Text("先生の答え（任意）")
-                                .font(.maru(.caption))
-                                .foregroundStyle(.secondary)
-                            TextField("先生の答え", text: $item.answer, axis: .vertical)
+            Group {
+                Section {
+                    DatePicker("受診日", selection: $visitDate, displayedComponents: .date)
+                        // 日付はグレゴリオ暦・日本時間で決める（R-90）。
+                        .environment(\.calendar, .japan)
+                        .environment(\.timeZone, Calendar.japan.timeZone)
+                }
+                Section("先生から聞いたこと・次までにすること") {
+                    TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
+                        .lineLimit(4...)
+                }
+                MemoPhotosSection(
+                    memoID: memoID,
+                    photos: store.photos(forMemo: memoID),
+                    loadingCount: $loadingPhotoCount,
+                    footer: "写真は、足す・外すとすぐ保存されます（「キャンセル」でも戻りません）。外した写真は、下の「元に戻す」で戻せます。"
+                )
+                if !items.isEmpty {
+                    Section("この健診で聞いたこと") {
+                        ForEach($items) { $item in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("質問\(item.number)")
+                                    .font(.maru(.caption))
+                                    .foregroundStyle(.secondary)
+                                TextField("質問", text: $item.questionText, axis: .vertical)
+                                Text("先生の答え（任意）")
+                                    .font(.maru(.caption))
+                                    .foregroundStyle(.secondary)
+                                TextField("先生の答え", text: $item.answer, axis: .vertical)
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
-            }
-            Section {
-                Button("このメモを削除する", role: .destructive) {
-                    isConfirmingDelete = true
+                Section {
+                    Button("このメモを削除する", role: .destructive) {
+                        isConfirmingDelete = true
+                    }
+                } footer: {
+                    Text("過去のメモを直しても、いま「聞きたいこと」で丸を付けている質問は、このメモに入りません。")
                 }
-            } footer: {
-                Text("過去のメモを直しても、いま「聞きたいこと」で丸を付けている質問は、このメモに入りません。")
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         .appBackground()
     }
@@ -259,53 +263,57 @@ private struct MemoView: View {
 
     var body: some View {
         List {
-            if !memo.body.isEmpty {
-                Section("先生から聞いたこと・次までにすること") {
-                    Text(memo.body)
-                        .textSelection(.enabled)
+            Group {
+                if !memo.body.isEmpty {
+                    Section("先生から聞いたこと・次までにすること") {
+                        Text(memo.body)
+                            .textSelection(.enabled)
+                    }
                 }
-            }
-            if !photos.isEmpty {
-                Section {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                        ForEach(Array(photos.enumerated()), id: \.element.id) { offset, photo in
-                            Button {
-                                viewing = ViewingPhoto(id: photo.id)
-                            } label: {
-                                PhotoThumbnail(thumbnailData: photo.thumbnailData, number: offset + 1, size: 96)
+                if !photos.isEmpty {
+                    Section {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                            ForEach(Array(photos.enumerated()), id: \.element.id) { offset, photo in
+                                Button {
+                                    viewing = ViewingPhoto(id: photo.id)
+                                } label: {
+                                    PhotoThumbnail(thumbnailData: photo.thumbnailData, number: offset + 1, size: 96)
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("押すと大きく表示します")
                             }
-                            .buttonStyle(.plain)
-                            .accessibilityHint("押すと大きく表示します")
                         }
-                    }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text("写真（\(photos.count)枚）")
-                } footer: {
-                    Text("押すと大きく表示します。指で広げると拡大できます。")
-                }
-            }
-            if !memo.items.isEmpty {
-                Section("この健診で聞いたこと") {
-                    ForEach(memo.sortedItems) { item in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.questionText)
-                                .font(.maru(.headline))
-                            Text(item.answer.isEmpty ? "答えのメモなし" : "先生の答え：\(item.answer)")
-                                .font(.maru(.subheadline))
-                                .foregroundStyle(item.answer.isEmpty ? .secondary : .primary)
-                        }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, 4)
+                    } header: {
+                        Text("写真（\(photos.count)枚）")
+                    } footer: {
+                        Text("押すと大きく表示します。指で広げると拡大できます。")
                     }
                 }
-            }
-            Section {
-                NavigationLink {
-                    ShareTextView(text: shareText)
-                } label: {
-                    Label("この健診後メモを共有する", systemImage: "square.and.arrow.up")
+                if !memo.items.isEmpty {
+                    Section("この健診で聞いたこと") {
+                        ForEach(memo.sortedItems) { item in
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.questionText)
+                                    .font(.maru(.headline))
+                                Text(item.answer.isEmpty ? "答えのメモなし" : "先生の答え：\(item.answer)")
+                                    .font(.maru(.subheadline))
+                                    .foregroundStyle(item.answer.isEmpty ? .secondary : .primary)
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    }
+                }
+                Section {
+                    NavigationLink {
+                        ShareTextView(text: shareText)
+                    } label: {
+                        Label("この健診後メモを共有する", systemImage: "square.and.arrow.up")
+                    }
                 }
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         .appBackground()
         .fullScreenCover(item: $viewing) { viewing in

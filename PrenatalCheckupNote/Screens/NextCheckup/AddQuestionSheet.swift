@@ -20,22 +20,26 @@ struct AddQuestionSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("聞きたいこと") {
-                    TextField("例：腰が痛いときに気をつけること", text: $text, axis: .vertical)
-                        .focused($isTextFocused)
-                        // 画面のテストで、この欄を見つけるための名前。
-                        .accessibilityIdentifier("questionTextField")
-                }
-                Section("補足（任意）") {
-                    TextField("いつから、どんなときに、など", text: $note, axis: .vertical)
-                }
-                if store.questionDraft != nil || !isEmpty {
-                    Section {
-                        Button("入力途中の内容を破棄", role: .destructive) {
-                            isConfirmingDiscard = true
+                Group {
+                    Section("聞きたいこと") {
+                        TextField("例：腰が痛いときに気をつけること", text: $text, axis: .vertical)
+                            .focused($isTextFocused)
+                            // 画面のテストで、この欄を見つけるための名前。
+                            .accessibilityIdentifier("questionTextField")
+                    }
+                    Section("補足（任意）") {
+                        TextField("いつから、どんなときに、など", text: $note, axis: .vertical)
+                    }
+                    if store.questionDraft != nil || !isEmpty {
+                        Section {
+                            Button("入力途中の内容を破棄", role: .destructive) {
+                                isConfirmingDiscard = true
+                            }
                         }
                     }
                 }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("質問を追加")

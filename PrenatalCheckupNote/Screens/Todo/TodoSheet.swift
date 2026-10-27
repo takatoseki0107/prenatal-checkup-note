@@ -80,63 +80,67 @@ struct TodoSheet: View {
 
     private var form: some View {
         Form {
-            Section("やること") {
-                TextField("例：母親学級の申し込み", text: $title, axis: .vertical)
-                    .accessibilityIdentifier("todoTitleField")
-            }
-
-            Section {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(chipRows, id: \.self) { row in
-                        chipRow(row)
-                    }
+            Group {
+                Section("やること") {
+                    TextField("例：母親学級の申し込み", text: $title, axis: .vertical)
+                        .accessibilityIdentifier("todoTitleField")
                 }
-                .padding(.vertical, 4)
-                // 選んだ期限を文で見せる（R-102）。
-                Text(choice.summary(today: today, nextCheckupDay: nextCheckupDay, pickedDay: pickedDay))
-                    .font(.maru(.subheadline).weight(.semibold))
-                    .foregroundStyle(choice.isWaitingForDate(pickedDay: pickedDay) ? Color.orange : Color.accentColor)
-                if choice == .pickDate {
-                    DatePicker("期限の日", selection: pickedDate, displayedComponents: .date)
-                        .datePickerStyle(.graphical)
-                        // 日付はグレゴリオ暦・日本時間で決める（R-90）。
-                        .environment(\.calendar, .japan)
-                        .environment(\.timeZone, Calendar.japan.timeZone)
-                }
-            } header: {
-                Text("期限")
-            } footer: {
-                Text("期限には、選んだ日付が入ります。あとで次の健診の日付を変えても、期限は変わりません。")
-            }
 
-            Section("補足（任意）") {
-                TextField("例：平日 14 時〜16 時に電話", text: $note, axis: .vertical)
-            }
-
-            Section {
-                Button {
-                    isStarred.toggle()
-                } label: {
-                    Label {
-                        Text(isStarred ? "大事な印を付けました" : "大事な印を付ける")
-                            .foregroundStyle(.primary)
-                    } icon: {
-                        Image(systemName: isStarred ? "star.fill" : "star")
-                            .foregroundStyle(isStarred ? AppColors.star : .secondary)
-                    }
-                }
-                .accessibilityAddTraits(isStarred ? .isSelected : [])
-            }
-
-            if isEditing {
                 Section {
-                    Button("このやることを削除する", role: .destructive) {
-                        delete()
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(chipRows, id: \.self) { row in
+                            chipRow(row)
+                        }
                     }
+                    .padding(.vertical, 4)
+                    // 選んだ期限を文で見せる（R-102）。
+                    Text(choice.summary(today: today, nextCheckupDay: nextCheckupDay, pickedDay: pickedDay))
+                        .font(.maru(.subheadline).weight(.semibold))
+                        .foregroundStyle(choice.isWaitingForDate(pickedDay: pickedDay) ? Color.orange : Color.accentColor)
+                    if choice == .pickDate {
+                        DatePicker("期限の日", selection: pickedDate, displayedComponents: .date)
+                            .datePickerStyle(.graphical)
+                            // 日付はグレゴリオ暦・日本時間で決める（R-90）。
+                            .environment(\.calendar, .japan)
+                            .environment(\.timeZone, Calendar.japan.timeZone)
+                    }
+                } header: {
+                    Text("期限")
                 } footer: {
-                    Text("削除したあと、画面の下の「元に戻す」で戻せます。")
+                    Text("期限には、選んだ日付が入ります。あとで次の健診の日付を変えても、期限は変わりません。")
+                }
+
+                Section("補足（任意）") {
+                    TextField("例：平日 14 時〜16 時に電話", text: $note, axis: .vertical)
+                }
+
+                Section {
+                    Button {
+                        isStarred.toggle()
+                    } label: {
+                        Label {
+                            Text(isStarred ? "大事な印を付けました" : "大事な印を付ける")
+                                .foregroundStyle(.primary)
+                        } icon: {
+                            Image(systemName: isStarred ? "star.fill" : "star")
+                                .foregroundStyle(isStarred ? AppColors.star : .secondary)
+                        }
+                    }
+                    .accessibilityAddTraits(isStarred ? .isSelected : [])
+                }
+
+                if isEditing {
+                    Section {
+                        Button("このやることを削除する", role: .destructive) {
+                            delete()
+                        }
+                    } footer: {
+                        Text("削除したあと、画面の下の「元に戻す」で戻せます。")
+                    }
                 }
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         .appBackground()
     }
@@ -175,7 +179,7 @@ struct TodoSheet: View {
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
-                .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+                .foregroundStyle(isSelected ? AppColors.onAccent : Color.accentColor)
                 .background(Capsule().fill(isSelected ? Color.accentColor : Color.clear))
                 .overlay(Capsule().strokeBorder(isSelected ? Color.clear : Color.accentColor.opacity(0.45)))
                 .contentShape(Capsule())

@@ -25,25 +25,29 @@ struct WriteMemoSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                visitDaySection
-                Section("先生から聞いたこと・次までにすること（任意）") {
-                    TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
-                        .lineLimit(4...)
-                        // 画面のテストで、この欄を見つけるための名前。
-                        .accessibilityIdentifier("memoBodyField")
-                }
-                MemoPhotosSection(
-                    memoID: store.memoDraft?.id,
-                    photos: store.memoDraftPhotos,
-                    loadingCount: $loadingPhotoCount,
-                    footer: "エコー写真などを付けられます。アプリの中に写しを保存するので、写真アプリで消してもメモの写真は残ります。文章で共有するときは入りません。"
-                )
-                askedQuestionsSection
-                Section {
-                    Button("入力途中の内容を破棄", role: .destructive) {
-                        isConfirmingDiscard = true
+                Group {
+                    visitDaySection
+                    Section("先生から聞いたこと・次までにすること（任意）") {
+                        TextField("先生の説明や、次の健診までにすること", text: $memoBody, axis: .vertical)
+                            .lineLimit(4...)
+                            // 画面のテストで、この欄を見つけるための名前。
+                            .accessibilityIdentifier("memoBodyField")
+                    }
+                    MemoPhotosSection(
+                        memoID: store.memoDraft?.id,
+                        photos: store.memoDraftPhotos,
+                        loadingCount: $loadingPhotoCount,
+                        footer: "エコー写真などを付けられます。アプリの中に写しを保存するので、写真アプリで消してもメモの写真は残ります。文章で共有するときは入りません。"
+                    )
+                    askedQuestionsSection
+                    Section {
+                        Button("入力途中の内容を破棄", role: .destructive) {
+                            isConfirmingDiscard = true
+                        }
                     }
                 }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("健診後メモ")
@@ -160,6 +164,8 @@ struct WriteMemoSheet: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            // ボタンの文字の色。ダークでは明るい青のボタンになるので、白ではなく濃い紺にする（段階 F）。
+            .foregroundStyle(AppColors.onAccent)
             .controlSize(.large)
             // 本文も「この健診で聞いたこと」も写真もないときは保存できない（R-12）。写真を読み込んでいる間も保存できない。
             .disabled(
