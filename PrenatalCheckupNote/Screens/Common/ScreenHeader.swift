@@ -129,8 +129,10 @@ extension View {
     /// 一覧を、見出しが隠れるくらい下にずらしたかを知らせる。
     func onScrolledPastHeader(_ action: @escaping (Bool) -> Void) -> some View {
         onScrollGeometryChange(for: Bool.self) { geometry in
-            // 見出しの高さ（およそ 60 ポイント）より下にずらしたら、隠れたとみなす。
-            geometry.contentOffset.y + geometry.contentInsets.top > 60
+            // 見出しがほぼ隠れるくらい（90 ポイント）下にずらしたら、隠れたとみなす。
+            // 見出しに上下の余白を足したあと、60 のままだと、見出しがまだ半分見えているうちに上の帯の題名も出て、
+            // 題名が 2 つ重なって見えた（実機で見つけた）。
+            geometry.contentOffset.y + geometry.contentInsets.top > 90
         } action: { _, isPast in
             action(isPast)
         }
