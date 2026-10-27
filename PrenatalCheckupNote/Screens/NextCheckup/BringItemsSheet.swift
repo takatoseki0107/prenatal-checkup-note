@@ -13,30 +13,34 @@ struct BringItemsSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    if store.bringItems.isEmpty {
-                        Text("持ち物はありません。下の欄から足せます。")
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(store.bringItems) { item in
-                        BringItemRow(item: item)
-                    }
-                } footer: {
-                    Text("持ち物の品目は、次の健診でも使えるように残ります。健診後メモを保存すると、チェックだけが外れます。")
-                }
-
-                Section("持ち物を足す") {
-                    HStack(spacing: 12) {
-                        TextField("例：お薬手帳", text: $newItemName)
-                            .submitLabel(.done)
-                            .onSubmit(addItem)
-                        Button("追加") {
-                            addItem()
+                Group {
+                    Section {
+                        if store.bringItems.isEmpty {
+                            Text("持ち物はありません。下の欄から足せます。")
+                                .foregroundStyle(.secondary)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(InputText.normalized(newItemName) == nil)
+                        ForEach(store.bringItems) { item in
+                            BringItemRow(item: item)
+                        }
+                    } footer: {
+                        Text("持ち物の品目は、次の健診でも使えるように残ります。健診後メモを保存すると、チェックだけが外れます。")
+                    }
+
+                    Section("持ち物を足す") {
+                        HStack(spacing: 12) {
+                            TextField("例：お薬手帳", text: $newItemName)
+                                .submitLabel(.done)
+                                .onSubmit(addItem)
+                            Button("追加") {
+                                addItem()
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(InputText.normalized(newItemName) == nil)
+                        }
                     }
                 }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("持ち物")

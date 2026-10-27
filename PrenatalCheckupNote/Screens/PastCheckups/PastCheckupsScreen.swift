@@ -94,6 +94,8 @@ struct PastCheckupsScreen: View {
                 Text("\(results.count)件")
             }
         }
+        // 行の地の色（ダークでも背景になじむ色。段階 F）。
+        .listRowBackground(AppColors.card)
     }
 
     /// 検索していないときの、メモの一覧。
@@ -115,6 +117,8 @@ struct PastCheckupsScreen: View {
         } footer: {
             Text("健診が終わったら、「健診予定」の画面の「健診後メモを書く」から書きます（健診の日付を入れると出ます）。メモを押すと、見返したり直したりできます。")
         }
+        // 行の地の色（ダークでも背景になじむ色。段階 F）。
+        .listRowBackground(AppColors.card)
     }
 }
 
@@ -237,7 +241,7 @@ private struct SearchField: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 11)
-        .background(Capsule().fill(Color(.secondarySystemGroupedBackground)))
+        .background(Capsule().fill(AppColors.card))
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowSeparator(.hidden)

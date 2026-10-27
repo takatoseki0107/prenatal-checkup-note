@@ -49,6 +49,8 @@ struct TodoScreen: View {
                     Text("やることはまだありません。先生に言われた申請や、産院への連絡などを「＋ やることを足す」で書いておきましょう。")
                         .foregroundStyle(.secondary)
                 }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
 
             ForEach(sections, id: \.kind) { section in
@@ -186,6 +188,8 @@ struct TodoScreen: View {
             } header: {
                 SectionHeader(section: section, today: today)
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
     }
 
@@ -224,6 +228,8 @@ struct TodoScreen: View {
             .textCase(nil)
             .accessibilityHint(showsCompleted ? "押すと、完了したことをたたみます" : "押すと、完了したことを開きます")
         }
+        // 行の地の色（ダークでも背景になじむ色。段階 F）。
+        .listRowBackground(AppColors.card)
     }
 }
 

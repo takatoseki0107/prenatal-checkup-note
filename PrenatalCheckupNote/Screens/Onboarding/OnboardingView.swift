@@ -11,16 +11,20 @@ struct OnboardingView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    Text("出産予定日を入れると、妊娠週数を表示し、次の健診の日付の目安を、時期に合った間隔で入れます。")
+                Group {
+                    Section {
+                        Text("出産予定日を入れると、妊娠週数を表示し、次の健診の日付の目安を、時期に合った間隔で入れます。")
+                    }
+                    Section {
+                        DueDateInputRows(entry: $entry)
+                    } header: {
+                        Text("出産予定日")
+                    } footer: {
+                        Text("入れなくても、すべての機能を使えます。あとから右上の設定で入れたり、直したりできます。記録はこの iPhone の中だけに保存します。")
+                    }
                 }
-                Section {
-                    DueDateInputRows(entry: $entry)
-                } header: {
-                    Text("出産予定日")
-                } footer: {
-                    Text("入れなくても、すべての機能を使えます。あとから右上の設定で入れたり、直したりできます。記録はこの iPhone の中だけに保存します。")
-                }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("はじめに")

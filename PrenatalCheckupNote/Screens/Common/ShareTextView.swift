@@ -9,14 +9,18 @@ struct ShareTextView: View {
 
     var body: some View {
         List {
-            Section {
-                Text(text)
-                    .font(.maru(.callout))
-                    .textSelection(.enabled)
-                    .padding(.vertical, 4)
-            } footer: {
-                Text("この文章を、メッセージやメモなどに送れます。写真は入りません。送る前に、中身を確かめてください。")
+            Group {
+                Section {
+                    Text(text)
+                        .font(.maru(.callout))
+                        .textSelection(.enabled)
+                        .padding(.vertical, 4)
+                } footer: {
+                    Text("この文章を、メッセージやメモなどに送れます。写真は入りません。送る前に、中身を確かめてください。")
+                }
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         .appBackground()
         .navigationTitle("共有する文章")

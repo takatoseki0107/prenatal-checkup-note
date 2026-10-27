@@ -68,27 +68,31 @@ struct EditQuestionSheet: View {
 
     private var form: some View {
         Form {
-            Section("聞きたいこと") {
-                TextField("聞きたいこと", text: $text, axis: .vertical)
-            }
-            Section("補足（任意）") {
-                TextField("いつから、どんなときに、など", text: $note, axis: .vertical)
-            }
-            Section {
-                TextField("先生から聞いたこと", text: $answer, axis: .vertical)
-                    .lineLimit(3...)
-            } header: {
-                Text("先生の答え（任意）")
-            } footer: {
-                Text("丸を付けていなくても書けます。")
-            }
-            Section {
-                Button("この質問を削除する", role: .destructive) {
-                    delete()
+            Group {
+                Section("聞きたいこと") {
+                    TextField("聞きたいこと", text: $text, axis: .vertical)
                 }
-            } footer: {
-                Text("削除したあと、画面の下の「元に戻す」で戻せます。")
+                Section("補足（任意）") {
+                    TextField("いつから、どんなときに、など", text: $note, axis: .vertical)
+                }
+                Section {
+                    TextField("先生から聞いたこと", text: $answer, axis: .vertical)
+                        .lineLimit(3...)
+                } header: {
+                    Text("先生の答え（任意）")
+                } footer: {
+                    Text("丸を付けていなくても書けます。")
+                }
+                Section {
+                    Button("この質問を削除する", role: .destructive) {
+                        delete()
+                    }
+                } footer: {
+                    Text("削除したあと、画面の下の「元に戻す」で戻せます。")
+                }
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         .appBackground()
     }

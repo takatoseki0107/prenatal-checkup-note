@@ -54,6 +54,8 @@ struct NextCheckupScreen: View {
                     Text("丸を押すと「聞いた」になります。星は大事な質問の印です。文を押すと直せます。長押しで並べ替え、左にスワイプで削除できます。")
                 }
             }
+            // 行の地の色（ダークでも背景になじむ色。段階 F）。
+            .listRowBackground(AppColors.card)
         }
         // 聞きたいことを 1 件ずつ、間を空けた丸いカードにする（段階 F）。
         // 行ごとに Section を分けると長押しの並べ替え（`onMove`）が使えなくなるので、行の間を空ける形にしている。
@@ -297,7 +299,7 @@ private struct NextCheckupCard: View {
                         Image(systemName: "calendar")
                             .foregroundStyle(Color.accentColor)
                             .frame(width: 32, height: 32)
-                            .background(Circle().fill(.background))
+                            .background(Circle().fill(AppColors.card))
                             .accessibilityHidden(true)
                         Text("まだ日付が入っていません")
                             .font(.maru(.headline))

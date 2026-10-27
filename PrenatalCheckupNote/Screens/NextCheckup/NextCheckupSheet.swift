@@ -38,45 +38,49 @@ struct NextCheckupSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    DatePicker("日付", selection: $date, displayedComponents: .date)
-                    DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
-                }
-                // 日付と時刻はグレゴリオ暦・日本時間で決める（R-90）。
-                .environment(\.calendar, .japan)
-                .environment(\.timeZone, Calendar.japan.timeZone)
-
-                Section {
-                    weeksLayout {
-                        weeksButton(1)
-                        weeksButton(2)
-                        weeksButton(4)
-                    }
-                } header: {
-                    Text(NextCheckupSuggestion.baseLabel(lastVisit: lastVisit, today: today))
-                } footer: {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text((suggestion?.reasonText ?? "") + "実際の日付は病院で決まるので、決まった日に直してください。")
-                        // 選んでいる日の妊娠週数（R-51）。
-                        if let ageText = store.gestationalAgeText(on: selectedDay) {
-                            Text("この日は\(ageText)です")
-                                .fontWeight(.semibold)
-                                .foregroundStyle(Color.accentColor)
-                        }
-                    }
-                }
-
-                reminderSection
-
-                if store.nextCheckup != nil {
+                Group {
                     Section {
-                        Button("次の健診の日付を消す（お知らせも取り消す）", role: .destructive) {
-                            clear()
+                        DatePicker("日付", selection: $date, displayedComponents: .date)
+                        DatePicker("時刻", selection: $time, displayedComponents: .hourAndMinute)
+                    }
+                    // 日付と時刻はグレゴリオ暦・日本時間で決める（R-90）。
+                    .environment(\.calendar, .japan)
+                    .environment(\.timeZone, Calendar.japan.timeZone)
+
+                    Section {
+                        weeksLayout {
+                            weeksButton(1)
+                            weeksButton(2)
+                            weeksButton(4)
                         }
+                    } header: {
+                        Text(NextCheckupSuggestion.baseLabel(lastVisit: lastVisit, today: today))
                     } footer: {
-                        Text("消したあと、画面の下の「元に戻す」で戻せます。")
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text((suggestion?.reasonText ?? "") + "実際の日付は病院で決まるので、決まった日に直してください。")
+                            // 選んでいる日の妊娠週数（R-51）。
+                            if let ageText = store.gestationalAgeText(on: selectedDay) {
+                                Text("この日は\(ageText)です")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                        }
+                    }
+
+                    reminderSection
+
+                    if store.nextCheckup != nil {
+                        Section {
+                            Button("次の健診の日付を消す（お知らせも取り消す）", role: .destructive) {
+                                clear()
+                            }
+                        } footer: {
+                            Text("消したあと、画面の下の「元に戻す」で戻せます。")
+                        }
                     }
                 }
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("次の健診")

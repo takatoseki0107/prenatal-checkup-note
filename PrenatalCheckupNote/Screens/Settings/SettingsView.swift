@@ -18,26 +18,30 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("出産予定日") {
-                    DueDateInputRows(entry: $entry)
-                }
-                Section {
-                    Toggle("妊娠週数を表示する", isOn: $showsGestationalAge)
-                } footer: {
-                    Text("オフにすると、週数はどこにも表示しません。次の健診の日付の目安には使います。予定日は、健診で変わったら直してください。")
-                }
-                if store.dueDate != nil {
-                    Section {
-                        Button("出産予定日を消す", role: .destructive) {
-                            clearDueDate()
-                        }
-                    } footer: {
-                        Text("消したあと、画面の下の「元に戻す」で戻せます。")
+                Group {
+                    Section("出産予定日") {
+                        DueDateInputRows(entry: $entry)
                     }
+                    Section {
+                        Toggle("妊娠週数を表示する", isOn: $showsGestationalAge)
+                    } footer: {
+                        Text("オフにすると、週数はどこにも表示しません。次の健診の日付の目安には使います。予定日は、健診で変わったら直してください。")
+                    }
+                    if store.dueDate != nil {
+                        Section {
+                            Button("出産予定日を消す", role: .destructive) {
+                                clearDueDate()
+                            }
+                        } footer: {
+                            Text("消したあと、画面の下の「元に戻す」で戻せます。")
+                        }
+                    }
+                    #if DEBUG
+                    DeveloperSection()
+                    #endif
                 }
-                #if DEBUG
-                DeveloperSection()
-                #endif
+                // 行の地の色（ダークでも背景になじむ色。段階 F）。
+                .listRowBackground(AppColors.card)
             }
             .appBackground()
             .navigationTitle("設定")
