@@ -10,9 +10,16 @@ struct PastCheckupsScreen: View {
     @Environment(AppRouter.self) private var router
     /// 検索の欄に入れた文。
     @State private var query = ""
+    /// 見出しが隠れて、上の帯に題名を出しているか。
+    @State private var isShowingInlineTitle = false
 
     var body: some View {
         List {
+            Section {
+                ScreenHeader(kind: .past, title: "健診の記録", subtitle: ScreenHeaderText.past(memoCount: store.memos.count))
+            }
+            .listSectionSpacing(.compact)
+
             if let results = searchResults {
                 searchResultsSection(results)
             } else {
@@ -22,7 +29,8 @@ struct PastCheckupsScreen: View {
         // メモ 1 件ずつを、間を空けた丸いカードにする（段階 F）。
         .listRowSpacing(10)
         .appBackground()
-        .navigationTitle("健診の記録")
+        .onScrolledPastHeader { isShowingInlineTitle = $0 }
+        .screenHeaderTitle("健診の記録", isShown: isShowingInlineTitle)
         .searchable(text: $query, prompt: "メモを探す（例：むくみ 足）")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {

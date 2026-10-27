@@ -11,6 +11,8 @@ struct TodoScreen: View {
     @Environment(AppRouter.self) private var router
     /// 「完了したこと」を開いているか。最初はたたんでおく（R-104）。
     @State private var showsCompleted = false
+    /// 見出しが隠れて、上の帯に題名を出しているか。
+    @State private var isShowingInlineTitle = false
 
     var body: some View {
         let today = CalendarDay(.now)
@@ -24,6 +26,18 @@ struct TodoScreen: View {
         let checkedCount = TodoList.checkedCount(entries)
 
         List {
+            Section {
+                ScreenHeader(
+                    kind: .todo,
+                    title: "やること",
+                    subtitle: ScreenHeaderText.todo(
+                        untilNextCheckupCount: TodoList.nextCheckupSummary(entries, today: today, nextCheckupDay: nextCheckupDay)?.count,
+                        openCount: entries.filter { !$0.isCompleted }.count
+                    )
+                )
+            }
+            .listSectionSpacing(.compact)
+
             if let narrowingDay {
                 narrowingBanner(
                     day: narrowingDay,
@@ -56,7 +70,8 @@ struct TodoScreen: View {
         // 1 件ずつを、間を空けた丸いカードにする（ほかの画面と同じ。段階 F）。
         .listRowSpacing(10)
         .appBackground()
-        .navigationTitle("やること")
+        .onScrolledPastHeader { isShowingInlineTitle = $0 }
+        .screenHeaderTitle("やること", isShown: isShowingInlineTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

@@ -16,6 +16,21 @@ enum AppColors {
     static let star = Color("StarYellow")
     /// やることの緑のチェックと「完了にする」のボタン（5.10、R-104）。白い文字が読める濃さの緑にしている。
     static let check = Color("CheckGreen")
+    /// 各タブの見出し（`ScreenHeader`）の色。健診予定はピンク、やることは黄色、健診の記録は空色。
+    /// ダークでは、暗く沈んで見えないよう、少し明るさを残した深い色にしている（開発者の希望）。
+    /// 印の後ろの四角。
+    static let headerTintPink = Color("HeaderTintPink")
+    static let headerTintYellow = Color("HeaderTintYellow")
+    static let headerTintSky = Color("HeaderTintSky")
+    /// 題名の下に敷く、蛍光ペンのような色。
+    static let headerMarkerPink = Color("HeaderMarkerPink")
+    static let headerMarkerYellow = Color("HeaderMarkerYellow")
+    static let headerMarkerSky = Color("HeaderMarkerSky")
+    /// 印の色。黄色と空色の四角の上でも見えるよう、ライトでは濃い色にしている。
+    static let headerIconYellow = Color("HeaderIconYellow")
+    static let headerIconSky = Color("HeaderIconSky")
+    /// 健診の記録の、キラッとした飾りの色（ほかの 2 つは `pink` と `star` を使う）。
+    static let headerSparkSky = Color("HeaderSparkSky")
 }
 
 /// アプリの字体（段階 F）。iPhone に最初から入っている丸い字体「ヒラギノ丸ゴ」を使う。
