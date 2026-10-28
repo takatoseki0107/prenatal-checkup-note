@@ -39,7 +39,7 @@ struct ScreenHeader: View {
 
         var iconColor: Color {
             switch self {
-            case .next: Color.accentColor
+            case .next: AppColors.headerIconBlue
             case .todo: AppColors.headerIconYellow
             case .past: AppColors.headerIconSky
             }

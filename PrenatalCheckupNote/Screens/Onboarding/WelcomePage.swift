@@ -78,7 +78,7 @@ struct WelcomePage: View {
             Text("妊婦健診ノートへ")
                 .font(.maru(.subheadline))
                 .fontWeight(.bold)
-                .foregroundStyle(AppColors.headerIconSky)
+                .foregroundStyle(Color.accentColor)
             Text("ようこそ")
                 .font(.maru(.largeTitle))
                 .fontWeight(.bold)

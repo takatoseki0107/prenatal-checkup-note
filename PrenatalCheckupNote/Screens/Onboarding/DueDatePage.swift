@@ -85,7 +85,8 @@ struct DueDatePage: View {
             ZStack(alignment: .bottom) {
                 Image(systemName: "calendar")
                     .font(.system(size: 52, weight: .regular))
-                    .foregroundStyle(Color.accentColor)
+                    // ピンクの丸は、ダークでも明るいままなので、カレンダーも決まった青にする。
+                    .foregroundStyle(AppColors.headerIconBlue)
                 Image(systemName: "heart.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(AppColors.pink)

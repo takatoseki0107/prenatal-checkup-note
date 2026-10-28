@@ -28,7 +28,8 @@ enum AppColors {
     /// やることの緑のチェックと「完了にする」のボタン（5.10、R-104）。白い文字が読める濃さの緑にしている。
     static let check = Color("CheckGreen")
     /// 各タブの見出し（`ScreenHeader`）の色。健診予定はピンク、やることは黄色、健診の記録は空色。
-    /// ダークでは、暗く沈んで見えないよう、少し明るさを残した深い色にしている（開発者の希望）。
+    /// 印の後ろの四角と印の色は、ダークでもライトと同じ明るい色にする（開発者の希望。アイコンだけは、どちらでも同じ見た目にそろえる）。
+    /// 最初はダークで深い色にしていたが、暗く見えた。題名の下の蛍光ペンの色は、ダークでは深い色のまま。
     /// 印の後ろの四角。
     static let headerTintPink = Color("HeaderTintPink")
     static let headerTintYellow = Color("HeaderTintYellow")
@@ -37,7 +38,9 @@ enum AppColors {
     static let headerMarkerPink = Color("HeaderMarkerPink")
     static let headerMarkerYellow = Color("HeaderMarkerYellow")
     static let headerMarkerSky = Color("HeaderMarkerSky")
-    /// 印の色。黄色と空色の四角の上でも見えるよう、ライトでは濃い色にしている。
+    /// 印の色。明るい四角の上でも見えるよう、濃い色にしている（ダークでも同じ）。
+    /// 健診予定の印は、もとは強調の色だったが、ダークの強調の色は明るい青でピンクの四角の上で見えにくいので、決まった青にした。
+    static let headerIconBlue = Color("HeaderIconBlue")
     static let headerIconYellow = Color("HeaderIconYellow")
     static let headerIconSky = Color("HeaderIconSky")
 }
