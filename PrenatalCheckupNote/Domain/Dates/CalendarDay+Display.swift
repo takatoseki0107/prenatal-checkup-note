@@ -8,8 +8,17 @@ extension CalendarDay {
     ///
     /// 曜日は `Calendar.japan` で決めるので、iPhone の言語や地域の設定によらず同じになる（R-90）。
     nonisolated var displayText: String {
+        "\(month)月\(day)日（\(weekdaySymbol)）"
+    }
+
+    /// 曜日の名前。例：「水曜日」。健診予定のカードの大きな日付の下に出す。
+    nonisolated var weekdayName: String {
+        "\(weekdaySymbol)曜日"
+    }
+
+    /// 曜日の短い名前。例：「水」。曜日は `Calendar.japan` で決める（R-90）。
+    private nonisolated var weekdaySymbol: String {
         let weekday = Calendar.japan.component(.weekday, from: date(hour: 12))
-        let symbol = Self.weekdaySymbols[(weekday - 1) % 7]
-        return "\(month)月\(day)日（\(symbol)）"
+        return Self.weekdaySymbols[(weekday - 1) % 7]
     }
 }

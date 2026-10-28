@@ -238,67 +238,82 @@ private struct NextCheckupCard: View {
         if let next = store.nextCheckup, let day = next.day {
             Section {
                 // 一覧の行の間を空けているので、カードの中身は 1 つの行にまとめ、区切りは自分で引く。
-                VStack(alignment: .leading, spacing: 10) {
-                    rowLayout {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("日時　\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute))")
-                                .font(.maru(.headline))
-                            if let ageText = store.gestationalAgeText(on: day) {
-                                Text("\(ageText)の健診")
+                // 上に大きな日付と「あと n 日」、真ん中に持ち物とタスクを左右に並べ、下にお知らせ（2026-10-28、見本 `NextCardLight.dc.html`）。
+                // 開発者が見せてくれた画面の、使いやすさに効く部分だけを、いまの空色の見た目に取り入れた。
+                VStack(spacing: 0) {
+                    topLayout {
+                        dateTile(day)
+                        VStack(alignment: .leading, spacing: 4) {
+                            // 「あと n 日」は少し大きめにする（最初は小さくて目立たなかった。開発者の希望）。
+                            Text(CheckupCountdown.text(today: CalendarDay(.now), checkupDay: day))
+                                .font(.maru(.subheadline))
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.secondary)
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(next.hour):\(String(format: "%02d", next.minute))")
+                                    .font(.maru(.title))
+                                    .fontWeight(.bold)
+                                Text("から")
                                     .font(.maru(.subheadline))
-                                    .foregroundStyle(.secondary)
+                            }
+                            if let ageText = store.gestationalAgeText(on: day) {
+                                Text(ageText)
+                                    .font(.maru(.caption))
+                                    .foregroundStyle(Color.accentColor)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 3)
+                                    .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(AppColors.card))
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        Button("変更") {
+                        // 読み上げでは、日付・時刻・日数・週数を 1 つにまとめて読む。
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(accessibilityText(day: day, next: next))
+                        Button {
                             router.sheet = .nextCheckup
+                        } label: {
+                            CardPill(title: "変更")
                         }
                         .buttonStyle(.borderless)
-                        .fontWeight(.semibold)
+                        .frame(maxHeight: .infinity, alignment: .top)
                     }
-                    Divider()
-                    rowLayout {
-                        Text("持ち物　\(checkedItemCount) / \(store.bringItems.count)")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Button("見る") {
+                    .padding(.vertical, 12)
+
+                    CardLine()
+                    shortcutLayout {
+                        Button {
                             router.sheet = .bringItems
+                        } label: {
+                            shortcutLabel(systemImage: "bag", title: "持ち物 \(checkedItemCount) / \(store.bringItems.count)", note: nil, action: "変更")
                         }
                         .buttonStyle(.borderless)
-                        .fontWeight(.semibold)
-                    }
-                    // 次の健診までのやることの数（R-110）。0 件なら出さない。
-                    // 「見る」で「タスク」のタブに移り、数えたものだけに絞って見せる（R-111）。全部出すと、どれを数えたのかわかりにくいため。
-                    if let summary = TodoList.nextCheckupSummary(
-                        store.todos.map(\.listEntry),
-                        today: CalendarDay(.now),
-                        nextCheckupDay: day
-                    ) {
-                        Divider()
-                        rowLayout {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(summary.title)
-                                if let overdueText = summary.overdueText {
-                                    Text(overdueText)
-                                        .font(.maru(.caption).weight(.semibold))
-                                        .foregroundStyle(.orange)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            Button("見る") {
+                        .accessibilityLabel("持ち物を見る。\(checkedItemCount) / \(store.bringItems.count)")
+                        // 次の健診までのタスクの数（R-110）。0 件なら出さない。
+                        // 押すと「タスク」のタブに移り、数えたものだけに絞って見せる（R-111）。
+                        if let summary = TodoList.nextCheckupSummary(
+                            store.todos.map(\.listEntry),
+                            today: CalendarDay(.now),
+                            nextCheckupDay: day
+                        ) {
+                            shortcutSeparator
+                            Button {
                                 router.showsTodosUntilNextCheckup = true
                                 router.selectedTab = .todo
+                            } label: {
+                                shortcutLabel(systemImage: "checklist", title: summary.shortTitle, note: summary.overdueText, action: "見る")
                             }
                             .buttonStyle(.borderless)
-                            .fontWeight(.semibold)
-                            .accessibilityLabel("タスクを見る")
+                            .accessibilityLabel(["タスクを見る", summary.title, summary.overdueText].compactMap { $0 }.joined(separator: "。"))
                         }
                     }
+                    .fixedSize(horizontal: false, vertical: true)
+
                     if let input = store.reminderInput {
-                        Divider()
+                        CardLine()
                         ReminderRow(input: input)
+                            .padding(.vertical, 10)
                     }
                 }
-                .padding(.vertical, 6)
             }
             .listRowBackground(AppColors.skyCard)
         } else {
@@ -335,16 +350,124 @@ private struct NextCheckupCard: View {
         }
     }
 
-    /// カードの行の並べ方。文字サイズがとても大きいときは、文と「変更」「見る」を横に並べず縦に積む（段階 F2）。
-    /// 横のままだと、日付が「11」「月23日」のように細かく折り返して読みにくかった。
-    private var rowLayout: AnyLayout {
+    /// カードの上の並べ方。文字サイズがとても大きいときは、日付・時刻・「変更」を横に並べず縦に積む（段階 F2 と同じ考え方）。
+    private var topLayout: AnyLayout {
         typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6))
-            : AnyLayout(HStackLayout(spacing: 8))
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 10))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: 14))
+    }
+
+    /// 持ち物とタスクの並べ方。文字サイズがとても大きいときは、左右ではなく上下に並べる。
+    private var shortcutLayout: AnyLayout {
+        typeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(spacing: 0))
+            : AnyLayout(HStackLayout(spacing: 0))
+    }
+
+    /// 持ち物とタスクの間の線。左右に並べるときは縦の線、上下に並べるときは横の線。
+    /// `Divider` は `AnyLayout` の中だと向きが決まらないことがあるので、線を自分で引く。
+    private var shortcutSeparator: some View {
+        CardLine(isVertical: !typeSize.isAccessibilitySize)
+    }
+
+    /// 左の大きな日付（例：「11月」「11」「水曜日」）。
+    private func dateTile(_ day: CalendarDay) -> some View {
+        VStack(spacing: 0) {
+            Text("\(day.month)月")
+                .font(.maru(.caption))
+            Text("\(day.day)")
+                .font(.custom(AppFonts.maruName, size: 34, relativeTo: .largeTitle))
+                .fontWeight(.bold)
+            Text(day.weekdayName)
+                .font(.maru(.caption))
+        }
+        .foregroundStyle(Color.accentColor)
+        .frame(width: 76, height: 90)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(AppColors.card))
+        // 四角の大きさは決まっているので、文字が大きくなりすぎてはみ出さないようにする。
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+        .accessibilityHidden(true)
+    }
+
+    /// 持ち物・タスクのボタンの中身。上に印と文、その下に小さな注意（期限を過ぎたものの数）、いちばん下に「変更」「見る」の丸いボタン。
+    /// 押せることがわかるよう、日時の「変更」と同じ丸いボタンを添える（開発者の指摘）。
+    /// 最初は右はしに並べたが、半分の幅では文が「持ち物 1 /」「3」のように折り返して崩れた（実機で見つけた）ので、縦に積む。
+    private func shortcutLabel(systemImage: String, title: String, note: String?, action: String) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .foregroundStyle(.primary)
+            }
+            .font(.maru(.callout))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            if let note {
+                Text(note)
+                    .font(.maru(.caption2).weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            CardPill(title: action)
+                .padding(.top, 2)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+    }
+
+    /// 読み上げの文。例：「11月11日（水） 10:30 から。次の健診まで、あと 14 日。妊娠 26 週 3 日」。
+    private func accessibilityText(day: CalendarDay, next: NextCheckup) -> String {
+        var parts = [
+            "\(day.displayText) \(next.hour):\(String(format: "%02d", next.minute)) から",
+            CheckupCountdown.text(today: CalendarDay(.now), checkupDay: day),
+        ]
+        if let ageText = store.gestationalAgeText(on: day) {
+            parts.append(ageText)
+        }
+        return parts.joined(separator: "。")
     }
 
     private var checkedItemCount: Int {
         store.bringItems.filter(\.isChecked).count
+    }
+}
+
+/// 健診予定のカードの中の、小さな丸いボタンの見た目（「変更」「見る」）。
+///
+/// 最初は青い文字だけで、押せることがわかりにくかった（開発者の指摘）。空色のカードの上で目立つよう、
+/// カードの地の色（ライトは白）の丸い形に青い文字をのせる。タスクの「直す」と同じくらいの大きさ。
+private struct CardPill: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.maru(.footnote).weight(.semibold))
+            .lineLimit(1)
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(AppColors.card))
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+    }
+}
+
+/// 健診予定のカードの中の区切りの線。
+///
+/// 標準の区切り線は、空色のカードの上（特にダークモード）では細く薄くて見えにくかった（開発者の指摘）ので、
+/// 文字の色を少し混ぜた、はっきりした線を引く。ライトでは濃い色、ダークでは白っぽい線になる。
+private struct CardLine: View {
+    var isVertical = false
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.18))
+            .frame(width: isVertical ? 1 : nil, height: isVertical ? nil : 1)
+            .accessibilityHidden(true)
     }
 }
 
