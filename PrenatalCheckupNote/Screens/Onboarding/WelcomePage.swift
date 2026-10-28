@@ -20,9 +20,15 @@ struct WelcomePage: View {
                     hero
                     features
                         // 中身が短いときも、下の地の色が画面の下まで続くようにする。
-                        .frame(maxHeight: .infinity, alignment: .top)
+                        // 地の色を中身の高さだけ塗ると、その下に空色がのぞいた（シミュレーターで見つけた）。
+                        // 地の色を下に大きくはみ出させて塗り、はみ出した分はスクロールの枠で切る。
+                        .background(alignment: .top) {
+                            UnevenRoundedRectangle(topLeadingRadius: 40, topTrailingRadius: 40, style: .continuous)
+                                .fill(AppColors.background)
+                                .padding(.bottom, -1000)
+                        }
                 }
-                .frame(minHeight: geometry.size.height)
+                .frame(minHeight: geometry.size.height, alignment: .top)
             }
             // 中身が画面に収まるときは、引っぱっても動かさない（下で空色がのぞかないように）。
             .scrollBounceBehavior(.basedOnSize)
@@ -104,7 +110,7 @@ struct WelcomePage: View {
         .accessibilityHidden(true)
     }
 
-    /// 下の地の色のところ。上の角を丸くして、空色の上に重ねたように見せる。
+    /// 下の地の色のところの中身。上の角を丸くした地の色は、`body` で画面の下までのばしてから塗る。
     private var features: some View {
         VStack(alignment: .leading, spacing: 16) {
             ForEach(WelcomeFeature.all, id: \.title) { feature in
@@ -115,10 +121,6 @@ struct WelcomePage: View {
         .padding(.top, 26)
         .padding(.bottom, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            UnevenRoundedRectangle(topLeadingRadius: 40, topTrailingRadius: 40, style: .continuous)
-                .fill(AppColors.background)
-        )
     }
 }
 

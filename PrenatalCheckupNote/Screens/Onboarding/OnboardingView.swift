@@ -28,7 +28,16 @@ struct OnboardingView: View {
         }
         // 横のスワイプで移れる形。下の点は自分で描くので、標準の点は出さない。
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .background(AppColors.background)
+        // 画面のいちばん上（時刻の帯の後ろ）といちばん下（ホームのバーの後ろ）の色。
+        // 横にめくる形の中身は、上下のはしまで届かないので、ここで塗る。上は 1 枚目なら空色、下はいつも地の色にする
+        // （1 枚目の上が地の色の帯になっていた。シミュレーターで見つけた）。
+        .background {
+            VStack(spacing: 0) {
+                page == 0 ? AppColors.welcomeSky : AppColors.background
+                AppColors.background
+            }
+            .ignoresSafeArea()
+        }
         // はじめにの上で起きた失敗は、はじめにの上で知らせる（ADR 0009）。
         .noteErrorAlert(store)
     }
