@@ -19,6 +19,8 @@ enum AppColors {
     static let onAccent = Color("OnAccent")
     /// 健診予定のカードの空色。背景を水色にしたので、背景に溶けないよう少し濃くした（ライト #D6E9F8）。
     static let skyCard = Color("SkyCard")
+    /// はじめにの「ようこそ」（5.11）の上の空色。アイコンの絵の空色になじむ色にしている（ライト #CFE6F8、ダーク #3A5F8A）。
+    static let welcomeSky = Color("WelcomeSky")
     /// やわらかいピンク。今日の週数のハートに使う。
     static let pink = Color("AccentPink")
     /// 星（大事な質問）の黄色。
