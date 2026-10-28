@@ -14,23 +14,15 @@ struct WelcomePage: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        GeometryReader { geometry in
+        // 画面に収まるときは、余った高さを紹介の間に配って、画面いっぱいに広げる（ScrollView の中では広げられないため）。
+        // 文字を大きくして収まらないときは、詰めた形をスクロールで見せる。
+        // 最初は紹介が上に寄り、下に大きな空きが残った（開発者の指摘）。
+        ViewThatFits(in: .vertical) {
+            content(spreads: true)
             ScrollView {
-                VStack(spacing: 0) {
-                    hero
-                    features
-                        // 中身が短いときも、下の地の色が画面の下まで続くようにする。
-                        // 地の色を中身の高さだけ塗ると、その下に空色がのぞいた（シミュレーターで見つけた）。
-                        // 地の色を下に大きくはみ出させて塗り、はみ出した分はスクロールの枠で切る。
-                        .background(alignment: .top) {
-                            UnevenRoundedRectangle(topLeadingRadius: 40, topTrailingRadius: 40, style: .continuous)
-                                .fill(AppColors.background)
-                                .padding(.bottom, -1000)
-                        }
-                }
-                .frame(minHeight: geometry.size.height, alignment: .top)
+                content(spreads: false)
             }
-            // 中身が画面に収まるときは、引っぱっても動かさない（下で空色がのぞかないように）。
+            // 引っぱっても動かさない（下で空色がのぞかないように）。
             .scrollBounceBehavior(.basedOnSize)
         }
         .background(AppColors.welcomeSky)
@@ -110,16 +102,48 @@ struct WelcomePage: View {
         .accessibilityHidden(true)
     }
 
-    /// 下の地の色のところの中身。上の角を丸くした地の色は、`body` で画面の下までのばしてから塗る。
-    private var features: some View {
-        // 見本と同じくらいのゆとりにする。最初は行の間が詰まって、紹介が上に寄って見えた（開発者の指摘）。
-        VStack(alignment: .leading, spacing: 20) {
-            ForEach(WelcomeFeature.all, id: \.title) { feature in
+    /// 上の空色のところと、下の地の色のところ。`spreads` が true なら、余った高さを間に配る。
+    private func content(spreads: Bool) -> some View {
+        VStack(spacing: 0) {
+            if spreads {
+                Spacer(minLength: 0)
+                    .frame(maxHeight: 24)
+            }
+            hero
+            features(spreads: spreads)
+                // 下の地の色が画面の下まで続くようにする。中身の高さだけ塗ると、その下に空色がのぞいた。
+                // 地の色を下に大きくはみ出させて塗り、はみ出した分は画面の枠で切る。
+                .background(alignment: .top) {
+                    UnevenRoundedRectangle(topLeadingRadius: 40, topTrailingRadius: 40, style: .continuous)
+                        .fill(AppColors.background)
+                        .padding(.bottom, -1000)
+                }
+        }
+        .clipped()
+    }
+
+    /// 下の地の色のところの中身。3 つのタブの紹介を並べる。
+    private func features(spreads: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(WelcomeFeature.all.enumerated()), id: \.element.title) { index, feature in
+                if index > 0 {
+                    // 紹介どうしの間。広げるときは、余った高さを配る（広げすぎないよう上限を付ける）。
+                    if spreads {
+                        Spacer(minLength: 20)
+                            .frame(maxHeight: 44)
+                    } else {
+                        Spacer(minLength: 20)
+                            .frame(height: 20)
+                    }
+                }
                 WelcomeFeatureRow(feature: feature)
+            }
+            if spreads {
+                Spacer(minLength: 0)
             }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 30)
+        .padding(.top, 32)
         .padding(.bottom, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -130,18 +154,18 @@ private struct WelcomeFeatureRow: View {
     let feature: WelcomeFeature
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 14) {
             Image(systemName: kind.systemImage)
-                .font(.title3)
+                .font(.title2)
                 .foregroundStyle(kind.iconColor)
-                .frame(width: 40, height: 40)
-                .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(kind.tint))
+                .frame(width: 46, height: 46)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(kind.tint))
                 .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(feature.title)
-                    .font(.maru(.headline))
+                    .font(.maru(.title3))
                     .fontWeight(.bold)
                     .foregroundStyle(.primary)
                 ForEach(feature.bullets, id: \.self) { bullet in
@@ -151,10 +175,10 @@ private struct WelcomeFeatureRow: View {
                             .accessibilityHidden(true)
                         Text(bullet)
                             .foregroundStyle(.secondary)
-                            .lineSpacing(4)
+                            .lineSpacing(3)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .font(.maru(.footnote))
+                    .font(.maru(.subheadline))
                     // 箇条書きどうしの間も少しあける。
                     .padding(.bottom, bullet == feature.bullets.last ? 0 : 3)
                 }
