@@ -244,8 +244,10 @@ private struct NextCheckupCard: View {
                     topLayout {
                         dateTile(day)
                         VStack(alignment: .leading, spacing: 4) {
+                            // 「あと n 日」は少し大きめにする（最初は小さくて目立たなかった。開発者の希望）。
                             Text(CheckupCountdown.text(today: CalendarDay(.now), checkupDay: day))
-                                .font(.maru(.caption))
+                                .font(.maru(.subheadline))
+                                .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)
                             HStack(alignment: .firstTextBaseline, spacing: 4) {
                                 Text("\(next.hour):\(String(format: "%02d", next.minute))")
@@ -281,7 +283,7 @@ private struct NextCheckupCard: View {
                         Button {
                             router.sheet = .bringItems
                         } label: {
-                            shortcutLabel(systemImage: "bag", title: "持ち物　\(checkedItemCount) / \(store.bringItems.count)", note: nil, action: "変更")
+                            shortcutLabel(systemImage: "bag", title: "持ち物 \(checkedItemCount) / \(store.bringItems.count)", note: nil, action: "変更")
                         }
                         .buttonStyle(.borderless)
                         .accessibilityLabel("持ち物を見る。\(checkedItemCount) / \(store.bringItems.count)")
@@ -386,30 +388,40 @@ private struct NextCheckupCard: View {
         .accessibilityHidden(true)
     }
 
-    /// 持ち物・タスクのボタンの中身。印と文、下に小さな注意（期限を過ぎたものの数）、右に「変更」「見る」。
-    /// 最初は印と文だけで、押せることがわかりにくかった（開発者の指摘）ので、日時の「変更」と同じ青い文字を右に添える。
+    /// 持ち物・タスクのボタンの中身。上に印と文、その下に小さな注意（期限を過ぎたものの数）、いちばん下に「変更 ›」「見る ›」。
+    /// 押せることがわかるよう、日時の「変更」と同じ青い文字を添える（開発者の指摘）。
+    /// 最初は右はしに並べたが、半分の幅では文が「持ち物 1 /」「3」のように折り返して崩れた（実機で見つけた）ので、縦に積む。
     private func shortcutLabel(systemImage: String, title: String, note: String?, action: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-                .foregroundStyle(Color.accentColor)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(Color.accentColor)
+                    .accessibilityHidden(true)
                 Text(title)
                     .foregroundStyle(.primary)
-                if let note {
-                    Text(note)
-                        .font(.maru(.caption2).weight(.semibold))
-                        .foregroundStyle(.orange)
-                }
             }
-            Spacer(minLength: 4)
-            Text(action)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.accentColor)
+            .font(.maru(.callout))
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            if let note {
+                Text(note)
+                    .font(.maru(.caption2).weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            HStack(spacing: 2) {
+                Text(action)
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .accessibilityHidden(true)
+            }
+            .font(.maru(.footnote))
+            .fontWeight(.semibold)
+            .foregroundStyle(Color.accentColor)
         }
-        .font(.maru(.callout))
-        .padding(.horizontal, 10)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
     }
