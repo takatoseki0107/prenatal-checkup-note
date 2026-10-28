@@ -175,9 +175,15 @@ nonisolated enum TodoList {
         /// そのうち、期限を過ぎたものの数。
         let overdueCount: Int
 
-        /// 例：「次の健診までのタスク　4 件」。
+        /// 例：「次の健診までのタスク　4 件」。読み上げの文に使う。
         var title: String {
             "次の健診までのタスク　\(count) 件"
+        }
+
+        /// 健診予定のカードの、持ち物と並べたボタンの文。例：「タスク　4 件」。
+        /// 持ち物と左右 2 つに並べたので、短くした（2026-10-28、見本 `NextCardLight.dc.html`）。
+        var shortTitle: String {
+            "タスク　\(count) 件"
         }
 
         /// 期限を過ぎたものがあるときだけ。例：「期限を過ぎたもの 1 件」。

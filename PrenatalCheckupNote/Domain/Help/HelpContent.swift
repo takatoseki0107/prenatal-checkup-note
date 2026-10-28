@@ -67,7 +67,7 @@ nonisolated enum HelpContent {
     static func tip(for topic: HelpTopic) -> String? {
         switch topic {
         case .next: "間違えて消しても、下に出る「元に戻す」で戻せます。"
-        case .todo: "健診予定のカードの「次の健診までのタスク」を押すと、次の健診までのものだけを見られます。"
+        case .todo: "健診予定のカードの「タスク」を押すと、次の健診までのものだけを見られます。"
         case .past: "写真は 1 つのメモに 5 枚まで付けられます。"
         case .trouble: nil
         }

@@ -227,6 +227,7 @@ struct TodoListTests {
 
         #expect(summary == TodoList.NextCheckupSummary(count: 4, overdueCount: 1))
         #expect(summary.title == "次の健診までのタスク　4 件")
+        #expect(summary.shortTitle == "タスク　4 件")
         #expect(summary.overdueText == "期限を過ぎたもの 1 件")
     }
 
