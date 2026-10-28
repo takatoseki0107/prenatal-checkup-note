@@ -276,12 +276,12 @@ private struct NextCheckupCard: View {
                     }
                     .padding(.vertical, 12)
 
-                    Divider()
+                    CardLine()
                     shortcutLayout {
                         Button {
                             router.sheet = .bringItems
                         } label: {
-                            shortcutLabel(systemImage: "bag", title: "持ち物　\(checkedItemCount) / \(store.bringItems.count)", note: nil)
+                            shortcutLabel(systemImage: "bag", title: "持ち物　\(checkedItemCount) / \(store.bringItems.count)", note: nil, action: "変更")
                         }
                         .buttonStyle(.borderless)
                         .accessibilityLabel("持ち物を見る。\(checkedItemCount) / \(store.bringItems.count)")
@@ -297,7 +297,7 @@ private struct NextCheckupCard: View {
                                 router.showsTodosUntilNextCheckup = true
                                 router.selectedTab = .todo
                             } label: {
-                                shortcutLabel(systemImage: "checklist", title: summary.shortTitle, note: summary.overdueText)
+                                shortcutLabel(systemImage: "checklist", title: summary.shortTitle, note: summary.overdueText, action: "見る")
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel(["タスクを見る", summary.title, summary.overdueText].compactMap { $0 }.joined(separator: "。"))
@@ -306,7 +306,7 @@ private struct NextCheckupCard: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                     if let input = store.reminderInput {
-                        Divider()
+                        CardLine()
                         ReminderRow(input: input)
                             .padding(.vertical, 10)
                     }
@@ -364,10 +364,7 @@ private struct NextCheckupCard: View {
     /// 持ち物とタスクの間の線。左右に並べるときは縦の線、上下に並べるときは横の線。
     /// `Divider` は `AnyLayout` の中だと向きが決まらないことがあるので、線を自分で引く。
     private var shortcutSeparator: some View {
-        Rectangle()
-            .fill(.separator)
-            .frame(width: typeSize.isAccessibilitySize ? nil : 1, height: typeSize.isAccessibilitySize ? 1 : nil)
-            .accessibilityHidden(true)
+        CardLine(isVertical: !typeSize.isAccessibilitySize)
     }
 
     /// 左の大きな日付（例：「11月」「11」「水曜日」）。
@@ -389,24 +386,31 @@ private struct NextCheckupCard: View {
         .accessibilityHidden(true)
     }
 
-    /// 持ち物・タスクのボタンの中身。印と文、下に小さな注意（期限を過ぎたものの数）。
-    private func shortcutLabel(systemImage: String, title: String, note: String?) -> some View {
-        VStack(spacing: 2) {
-            HStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .foregroundStyle(Color.accentColor)
+    /// 持ち物・タスクのボタンの中身。印と文、下に小さな注意（期限を過ぎたものの数）、右に「変更」「見る」。
+    /// 最初は印と文だけで、押せることがわかりにくかった（開発者の指摘）ので、日時の「変更」と同じ青い文字を右に添える。
+    private func shortcutLabel(systemImage: String, title: String, note: String?, action: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .foregroundStyle(Color.accentColor)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .foregroundStyle(.primary)
+                if let note {
+                    Text(note)
+                        .font(.maru(.caption2).weight(.semibold))
+                        .foregroundStyle(.orange)
+                }
             }
-            .font(.maru(.callout))
-            if let note {
-                Text(note)
-                    .font(.maru(.caption2).weight(.semibold))
-                    .foregroundStyle(.orange)
-            }
+            Spacer(minLength: 4)
+            Text(action)
+                .fontWeight(.semibold)
+                .foregroundStyle(Color.accentColor)
         }
-        .frame(maxWidth: .infinity)
+        .font(.maru(.callout))
+        .padding(.horizontal, 10)
         .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
     }
 
@@ -424,6 +428,21 @@ private struct NextCheckupCard: View {
 
     private var checkedItemCount: Int {
         store.bringItems.filter(\.isChecked).count
+    }
+}
+
+/// 健診予定のカードの中の区切りの線。
+///
+/// 標準の区切り線は、空色のカードの上（特にダークモード）では細く薄くて見えにくかった（開発者の指摘）ので、
+/// 文字の色を少し混ぜた、はっきりした線を引く。ライトでは濃い色、ダークでは白っぽい線になる。
+private struct CardLine: View {
+    var isVertical = false
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.18))
+            .frame(width: isVertical ? 1 : nil, height: isVertical ? nil : 1)
+            .accessibilityHidden(true)
     }
 }
 
