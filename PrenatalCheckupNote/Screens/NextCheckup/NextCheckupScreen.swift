@@ -269,11 +269,12 @@ private struct NextCheckupCard: View {
                         // 読み上げでは、日付・時刻・日数・週数を 1 つにまとめて読む。
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel(accessibilityText(day: day, next: next))
-                        Button("変更") {
+                        Button {
                             router.sheet = .nextCheckup
+                        } label: {
+                            CardPill(title: "変更")
                         }
                         .buttonStyle(.borderless)
-                        .fontWeight(.semibold)
                         .frame(maxHeight: .infinity, alignment: .top)
                     }
                     .padding(.vertical, 12)
@@ -388,8 +389,8 @@ private struct NextCheckupCard: View {
         .accessibilityHidden(true)
     }
 
-    /// 持ち物・タスクのボタンの中身。上に印と文、その下に小さな注意（期限を過ぎたものの数）、いちばん下に「変更 ›」「見る ›」。
-    /// 押せることがわかるよう、日時の「変更」と同じ青い文字を添える（開発者の指摘）。
+    /// 持ち物・タスクのボタンの中身。上に印と文、その下に小さな注意（期限を過ぎたものの数）、いちばん下に「変更」「見る」の丸いボタン。
+    /// 押せることがわかるよう、日時の「変更」と同じ丸いボタンを添える（開発者の指摘）。
     /// 最初は右はしに並べたが、半分の幅では文が「持ち物 1 /」「3」のように折り返して崩れた（実機で見つけた）ので、縦に積む。
     private func shortcutLabel(systemImage: String, title: String, note: String?, action: String) -> some View {
         VStack(spacing: 4) {
@@ -410,15 +411,8 @@ private struct NextCheckupCard: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
-            HStack(spacing: 2) {
-                Text(action)
-                Image(systemName: "chevron.right")
-                    .font(.caption2)
-                    .accessibilityHidden(true)
-            }
-            .font(.maru(.footnote))
-            .fontWeight(.semibold)
-            .foregroundStyle(Color.accentColor)
+            CardPill(title: action)
+                .padding(.top, 2)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 10)
@@ -440,6 +434,25 @@ private struct NextCheckupCard: View {
 
     private var checkedItemCount: Int {
         store.bringItems.filter(\.isChecked).count
+    }
+}
+
+/// 健診予定のカードの中の、小さな丸いボタンの見た目（「変更」「見る」）。
+///
+/// 最初は青い文字だけで、押せることがわかりにくかった（開発者の指摘）。空色のカードの上で目立つよう、
+/// カードの地の色（ライトは白）の丸い形に青い文字をのせる。タスクの「直す」と同じくらいの大きさ。
+private struct CardPill: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.maru(.footnote).weight(.semibold))
+            .lineLimit(1)
+            .foregroundStyle(Color.accentColor)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(AppColors.card))
+            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
     }
 }
 
