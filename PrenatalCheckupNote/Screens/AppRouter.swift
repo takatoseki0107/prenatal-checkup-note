@@ -40,6 +40,8 @@ final class AppRouter {
         case addTodo
         /// やることを直す・削除する（R-101、R-105）。
         case editTodo(UUID)
+        /// 使い方（5.12）。押した画面のタブの説明から開く。
+        case help(HelpTopic)
 
         var id: Self { self }
     }

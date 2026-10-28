@@ -65,6 +65,14 @@ struct NextCheckupScreen: View {
         .onScrolledPastHeader { isShowingInlineTitle = $0 }
         .screenHeaderTitle("健診予定", isShown: isShowingInlineTitle)
         .toolbar {
+            // 使い方（5.12、R-116）。右上のいちばん左に置く。
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    router.sheet = .help(.next)
+                } label: {
+                    Label("使い方", systemImage: "questionmark.circle")
+                }
+            }
             // 聞きたいことの一覧を文章で共有する（段階 D）。質問がなければ押せない。
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

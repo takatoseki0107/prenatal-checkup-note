@@ -67,6 +67,8 @@ struct ContentView: View {
                 TodoSheet(mode: .add)
             case .editTodo(let todoID):
                 TodoSheet(mode: .edit(todoID))
+            case .help(let topic):
+                HelpSheet(topic: topic)
             }
         }
         // 初めて開いたときだけ「はじめに」を出す。終えると `needsOnboarding` が false になり、閉じる。
