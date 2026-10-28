@@ -112,6 +112,11 @@ final class NoteStore {
         photosByMemoID[id] ?? []
     }
 
+    /// そのメモ（または書きかけ）から足したやること。足した順（R-107）。
+    func todos(fromMemo id: UUID) -> [TodoItem] {
+        todos.filter { $0.originMemoID == id }
+    }
+
     /// 書きかけの健診後メモに選んだ写真。並び順。
     var memoDraftPhotos: [MemoPhoto] {
         memoDraft.map { photos(forMemo: $0.id) } ?? []

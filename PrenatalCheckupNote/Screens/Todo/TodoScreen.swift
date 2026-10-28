@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// タブ「やること」（要件定義 v0.4 の 5.10、R-100〜R-106）。触れる見本 `Todo.dc.html` と同じ並びにする。
+/// タブ「タスク」（要件定義 v0.4 の 5.10、R-100〜R-106）。触れる見本 `Todo.dc.html` と同じ並びにする。
 ///
 /// 一覧は見出しごと：いちばん上に「期限なし」、次に「期限を過ぎた」、そのあと期限の日ごと（並べ方は `TodoList`）。
 /// 丸を押すと緑のチェックが付いてその場に残り、下の「チェックした n 件を完了にする」で「完了したこと」に移る（2 段階、R-104）。
 /// 各行の星の下の「直す」で、足すときと同じシートを開く。左にスワイプで削除し、元に戻すの帯で戻せる（R-105）。
-/// 健診予定のカードの「見る」から開いたときは、次の健診までのやることだけに絞り、上の帯のボタン（「ほかのやること（n 件）も表示」）で戻す（R-111）。
+/// 健診予定のカードの「見る」から開いたときは、次の健診までのやることだけに絞り、上の帯のボタン（「ほかのタスク（n 件）も表示」）で戻す（R-111）。
 struct TodoScreen: View {
     @Environment(NoteStore.self) private var store
     @Environment(AppRouter.self) private var router
@@ -29,7 +29,7 @@ struct TodoScreen: View {
             Section {
                 ScreenHeader(
                     kind: .todo,
-                    title: "やること",
+                    title: "タスク",
                     subtitle: ScreenHeaderText.todo(
                         untilNextCheckupCount: TodoList.nextCheckupSummary(entries, today: today, nextCheckupDay: nextCheckupDay)?.count,
                         openCount: entries.filter { !$0.isCompleted }.count
@@ -46,7 +46,7 @@ struct TodoScreen: View {
                 )
             } else if entries.isEmpty {
                 Section {
-                    Text("やることはまだありません。先生に言われた申請や、産院への連絡などを「＋ やることを足す」で書いておきましょう。")
+                    Text("タスクはまだありません。先生に言われた申請や、産院への連絡などを「＋ タスクを追加」で書いておきましょう。")
                         .foregroundStyle(.secondary)
                 }
                 // 行の地の色（ダークでも背景になじむ色。段階 F）。
@@ -65,7 +65,7 @@ struct TodoScreen: View {
             if narrowingDay == nil, !entries.isEmpty {
                 Section {
                 } footer: {
-                    Text("丸を押すと緑のチェックが付きます。下の「完了にする」で「完了したこと」に移ります。「直す」で期限などを直せます。左にスワイプで削除できます。")
+                    Text("丸を押すと緑のチェックが付きます。下の「完了にする」で「完了したタスク」に移ります。「直す」で期限などを直せます。左にスワイプで削除できます。")
                 }
             }
         }
@@ -73,7 +73,7 @@ struct TodoScreen: View {
         .listRowSpacing(10)
         .appBackground()
         .onScrolledPastHeader { isShowingInlineTitle = $0 }
-        .screenHeaderTitle("やること", isShown: isShowingInlineTitle)
+        .screenHeaderTitle("タスク", isShown: isShowingInlineTitle)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -100,7 +100,7 @@ struct TodoScreen: View {
                     Button {
                         router.sheet = .addTodo
                     } label: {
-                        Label("やることを足す", systemImage: "plus")
+                        Label("タスクを追加", systemImage: "plus")
                             .frame(maxWidth: .infinity)
                     }
                 }
@@ -146,7 +146,7 @@ struct TodoScreen: View {
                 }
                 .accessibilityElement(children: .combine)
                 if count == 0 {
-                    Text("次の健診までのやることは、もうありません。")
+                    Text("次の健診までのタスクは、もうありません。")
                         .font(.maru(.subheadline))
                         .foregroundStyle(.secondary)
                 }
@@ -228,7 +228,7 @@ struct TodoScreen: View {
             }
             .buttonStyle(.plain)
             .textCase(nil)
-            .accessibilityHint(showsCompleted ? "押すと、完了したことをたたみます" : "押すと、完了したことを開きます")
+            .accessibilityHint(showsCompleted ? "押すと、完了したタスクをたたみます" : "押すと、完了したタスクを開きます")
         }
         // 行の地の色（ダークでも背景になじむ色。段階 F）。
         .listRowBackground(AppColors.card)

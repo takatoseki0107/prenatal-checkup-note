@@ -9,13 +9,13 @@ nonisolated enum ScreenHeaderText {
         todayAgeText.map { "今日は \($0)" } ?? "次の健診の予定と、聞きたいこと"
     }
 
-    /// やること。次の健診までのものがあればその数、なければ残っている数、何もなければ画面の説明。
+    /// タスク。次の健診までのものがあればその数、なければ残っている数、何もなければ画面の説明。
     static func todo(untilNextCheckupCount: Int?, openCount: Int) -> String {
         if let untilNextCheckupCount, untilNextCheckupCount > 0 {
             return "次の健診までに \(untilNextCheckupCount) 件"
         }
         if openCount > 0 {
-            return "やること \(openCount) 件"
+            return "タスク \(openCount) 件"
         }
         return "健診と健診の間にすること"
     }

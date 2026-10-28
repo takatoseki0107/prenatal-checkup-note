@@ -79,6 +79,7 @@ nonisolated struct TodoSnapshot: Equatable, Sendable {
     let isChecked: Bool
     let completedAt: Date?
     let originVisitDayNumber: Int?
+    let originMemoID: UUID?
     let createdAt: Date
 }
 
@@ -183,6 +184,7 @@ extension TodoItem {
             isChecked: isChecked,
             completedAt: completedAt,
             originVisitDayNumber: originVisitDayNumber,
+            originMemoID: originMemoID,
             createdAt: createdAt
         )
     }

@@ -158,7 +158,7 @@ nonisolated enum TodoList {
         entries.filter { $0.isChecked && !$0.isCompleted }.count
     }
 
-    /// 「やること」のタブに出す数。完了していない「期限を過ぎた」と「今日」のやること（R-106）。
+    /// 「タスク」のタブに出す数。完了していない「期限を過ぎた」と「今日」のやること（R-106）。
     static func badgeCount(_ entries: [Entry], today: CalendarDay) -> Int {
         entries.filter { entry in
             guard !entry.isCompleted, let dueDay = entry.dueDay else {
@@ -175,9 +175,9 @@ nonisolated enum TodoList {
         /// そのうち、期限を過ぎたものの数。
         let overdueCount: Int
 
-        /// 例：「次の健診までのやること　4 件」。
+        /// 例：「次の健診までのタスク　4 件」。
         var title: String {
-            "次の健診までのやること　\(count) 件"
+            "次の健診までのタスク　\(count) 件"
         }
 
         /// 期限を過ぎたものがあるときだけ。例：「期限を過ぎたもの 1 件」。
@@ -212,7 +212,7 @@ nonisolated enum TodoList {
 
     /// 絞り込んでいるときに、一覧の上に出す文（R-111）。例：「次の健診（11月23日）まで」。数は横に大きく出す。
     ///
-    /// 画面の題名が「やること」なので、「のやること」は付けない（付けると、数と並べたときに「やる／こと」で折り返した）。
+    /// 画面の題名が「タスク」なので、「のタスク」は付けない（「やること」だったころ、付けると数と並べたときに「やる／こと」で折り返した）。
     static func untilNextCheckupTitle(nextCheckupDay: CalendarDay) -> String {
         "次の健診（\(nextCheckupDay.month)月\(nextCheckupDay.day)日）まで"
     }
@@ -220,11 +220,11 @@ nonisolated enum TodoList {
     /// 絞り込みをやめるボタンの文（R-111）。ほかに完了していないやることがあれば、その数を出す。
     ///
     /// 「すべて表示」だけだと、ほかにもあるのかがわからず迷う（開発者の指摘）ため、ほかの数を書く。ほかがなければ、一覧に戻るとだけ書く。
-    /// 例：「ほかのやること（1 件）も表示」「やることの一覧に戻る」。
+    /// 例：「ほかのタスク（1 件）も表示」「タスクの一覧に戻る」。
     static func showOthersButtonTitle(_ entries: [Entry], nextCheckupDay: CalendarDay) -> String {
         let openCount = entries.filter { !$0.isCompleted }.count
         let others = openCount - untilNextCheckup(entries, nextCheckupDay: nextCheckupDay).count
-        return others > 0 ? "ほかのやること（\(others) 件）も表示" : "やることの一覧に戻る"
+        return others > 0 ? "ほかのタスク（\(others) 件）も表示" : "タスクの一覧に戻る"
     }
 
     // MARK: - 行と見出しの文
@@ -250,7 +250,7 @@ nonisolated enum TodoList {
 
     /// 例：「完了したこと（3 件）」。
     static func completedTitle(count: Int) -> String {
-        "完了したこと（\(count) 件）"
+        "完了したタスク（\(count) 件）"
     }
 
     // MARK: - 内部

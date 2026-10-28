@@ -90,15 +90,15 @@ final class CoreFlowUITests: XCTestCase {
         XCTAssertEqual(restored.value as? String, "お腹の張り")
     }
 
-    /// やることを足す（期限は今日）→ 緑のチェック → 完了にする → 元に戻す（5.10、R-101〜R-104）。
+    /// タスクを追加（期限は今日）→ 緑のチェック → 完了にする → 元に戻す（5.10、R-101〜R-104）。
     @MainActor
     func testAddsCompletesAndUndoesATodo() throws {
         let app = launch(resettingData: true)
         skipOnboarding(app)
 
-        // 「やること」のタブを開き、やることを足す。
-        app.tabBars.buttons["やること"].tap()
-        let addButton = app.buttons["やることを足す"]
+        // 「タスク」のタブを開き、タスクを追加する。
+        app.tabBars.buttons["タスク"].tap()
+        let addButton = app.buttons["タスクを追加"]
         XCTAssertTrue(addButton.waitForExistence(timeout: timeout))
         addButton.tap()
         let input = field("todoTitleField", in: app)
@@ -117,7 +117,7 @@ final class CoreFlowUITests: XCTestCase {
         let completeButton = app.buttons["チェックした 1 件を完了にする"]
         XCTAssertTrue(completeButton.waitForExistence(timeout: timeout))
         completeButton.tap()
-        XCTAssertTrue(element(labelContaining: "完了したこと（1 件）", in: app).waitForExistence(timeout: timeout))
+        XCTAssertTrue(element(labelContaining: "完了したタスク（1 件）", in: app).waitForExistence(timeout: timeout))
 
         // 元に戻すと、チェックが付いた状態で一覧に戻る。
         app.buttons["元に戻す"].firstMatch.tap()

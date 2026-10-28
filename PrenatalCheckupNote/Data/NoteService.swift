@@ -478,7 +478,9 @@ final class NoteService {
 
     /// やることを足す（R-101）。期限は選んだ日付をそのまま入れる（R-102）。
     ///
-    /// - Parameter originVisitDay: 健診後メモから足すとき、そのメモの受診日（R-107）。
+    /// - Parameters:
+    ///   - originVisitDay: 健診後メモから足すとき、そのメモの受診日（R-107）。
+    ///   - originMemoID: 健診後メモから足すとき、そのメモ（または書きかけ）の ID（R-107）。
     @discardableResult
     func addTodo(
         title: String,
@@ -486,6 +488,7 @@ final class NoteService {
         dueDay: CalendarDay?,
         isStarred: Bool = false,
         originVisitDay: CalendarDay? = nil,
+        originMemoID: UUID? = nil,
         now: Date
     ) throws -> UUID {
         guard let title = InputText.normalized(title) else {
@@ -498,6 +501,7 @@ final class NoteService {
                 dueDay: dueDay,
                 isStarred: isStarred,
                 originVisitDay: originVisitDay,
+                originMemoID: originMemoID,
                 createdAt: now
             )
             context.insert(todo)

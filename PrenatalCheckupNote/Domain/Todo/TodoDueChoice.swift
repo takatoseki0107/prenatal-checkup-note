@@ -102,6 +102,14 @@ nonisolated enum TodoDueChoice: Hashable, Sendable {
         }
     }
 
+    /// 健診後メモから足すときに「次の健診まで」に使う日（R-107）。
+    ///
+    /// メモを書いている時点の「次の健診」は、たいてい書いている日の健診（保存すると空になる）なので、
+    /// その日がメモの受診日と同じなら「次の健診まで」は出さない（`nil` を返す）。そのまま出すと期限が「今日まで」になってしまう。
+    static func offeredNextCheckupDay(_ nextCheckupDay: CalendarDay?, memoVisitDay: CalendarDay) -> CalendarDay? {
+        nextCheckupDay == memoVisitDay ? nil : nextCheckupDay
+    }
+
     private static func hasUpcomingCheckup(today: CalendarDay, nextCheckupDay: CalendarDay?) -> Bool {
         guard let nextCheckupDay else {
             return false

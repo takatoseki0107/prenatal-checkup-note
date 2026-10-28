@@ -45,6 +45,45 @@ struct TodoServiceTests {
         #expect(todo.dueDay == nil)
     }
 
+    @Test func remembersWhichMemoTheTodoCameFrom() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        let memoID = UUID()
+        let visit = TestDates.day(2026, 10, 27)
+
+        let id = try service.addTodo(title: "受診票に記入する", dueDay: nil, originVisitDay: visit, originMemoID: memoID, now: now)
+        try service.addTodo(title: "自分で足した", dueDay: nil, now: later(minutes: 1))
+
+        let fromMemo = try service.todos().filter { $0.originMemoID == memoID }
+        #expect(fromMemo.map(\.id) == [id])
+        #expect(fromMemo.first?.originVisitDay == visit)
+
+        // 削除して元に戻しても、どのメモから足したかは残る。
+        try service.deleteTodo(id: id)
+        try service.undo()
+        #expect(try service.todos().first { $0.id == id }?.originMemoID == memoID)
+
+        // 開き直しても残る。
+        let current = try reopened(store)
+        #expect(try current.todos().first { $0.id == id }?.originMemoID == memoID)
+    }
+
+    @Test func keepsTheMemoIDFromTheDraftAfterSavingTheMemo() throws {
+        let store = try TemporaryStore()
+        let service = store.makeService()
+        try service.prepareInitialData(now: now)
+        let draft = try service.startMemoDraft(today: today, now: now)
+        try service.updateMemoDraft(visitDay: today, body: "受診票を書いてくる", excludedQuestionIDs: [], now: now)
+
+        // 書いている途中に、書きかけの ID でやることを足す。
+        try service.addTodo(title: "受診票に記入する", dueDay: nil, originVisitDay: today, originMemoID: draft.id, now: now)
+        let saved = try service.saveMemo(try service.memoInputFromDraft(), now: later(minutes: 5))
+
+        // 書きかけの ID は保存したメモの ID と同じなので、保存したメモから見える。
+        #expect(saved.memoID == draft.id)
+        #expect(try service.todos().filter { $0.originMemoID == saved.memoID }.map(\.title) == ["受診票に記入する"])
+    }
+
     @Test func refusesABlankTodo() throws {
         let store = try TemporaryStore()
         let service = store.makeService()

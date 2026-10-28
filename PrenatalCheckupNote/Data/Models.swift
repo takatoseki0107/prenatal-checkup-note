@@ -289,6 +289,10 @@ final class TodoItem {
     var completedAt: Date?
     /// 健診後メモから足したとき、そのメモの受診日（`CalendarDay.number`）。「◯月◯日の健診で」と出す（R-107）。
     var originVisitDayNumber: Int?
+    /// 健診後メモから足したとき、そのメモ（または書きかけ）の ID。メモの画面に「このメモから足したやること」を並べるのに使う（R-107）。
+    /// 書きかけの ID は保存したメモの ID と同じなので、書いている途中に足しても、保存後のメモから見える（ADR 0011 と同じ考え方）。
+    /// 関係（`@Relationship`）ではなく ID で指すので、メモを消してもやることは残る。
+    var originMemoID: UUID?
     /// 足した日時。同じ見出しの中の並び（足した順）に使う。
     var createdAt: Date
 
@@ -301,6 +305,7 @@ final class TodoItem {
         isChecked: Bool = false,
         completedAt: Date? = nil,
         originVisitDay: CalendarDay? = nil,
+        originMemoID: UUID? = nil,
         createdAt: Date
     ) {
         self.id = id
@@ -311,6 +316,7 @@ final class TodoItem {
         self.isChecked = isChecked
         self.completedAt = completedAt
         self.originVisitDayNumber = originVisitDay?.number
+        self.originMemoID = originMemoID
         self.createdAt = createdAt
     }
 
@@ -324,6 +330,7 @@ final class TodoItem {
         self.isChecked = snapshot.isChecked
         self.completedAt = snapshot.completedAt
         self.originVisitDayNumber = snapshot.originVisitDayNumber
+        self.originMemoID = snapshot.originMemoID
         self.createdAt = snapshot.createdAt
     }
 

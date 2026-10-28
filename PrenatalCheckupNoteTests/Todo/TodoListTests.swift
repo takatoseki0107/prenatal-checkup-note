@@ -181,7 +181,7 @@ struct TodoListTests {
         ]
 
         #expect(TodoList.completed(entries).map(\.title) == ["あとで完了", "先に完了"])
-        #expect(TodoList.completedTitle(count: 2) == "完了したこと（2 件）")
+        #expect(TodoList.completedTitle(count: 2) == "完了したタスク（2 件）")
     }
 
     @Test func countsCheckedTodos() {
@@ -226,7 +226,7 @@ struct TodoListTests {
         let summary = try #require(TodoList.nextCheckupSummary(entries, today: today, nextCheckupDay: nextCheckup))
 
         #expect(summary == TodoList.NextCheckupSummary(count: 4, overdueCount: 1))
-        #expect(summary.title == "次の健診までのやること　4 件")
+        #expect(summary.title == "次の健診までのタスク　4 件")
         #expect(summary.overdueText == "期限を過ぎたもの 1 件")
     }
 
@@ -267,7 +267,7 @@ struct TodoListTests {
         #expect(sections.map(\.title) == ["期限を過ぎた", "今日", "11月9日（月）"])
         #expect(TodoList.untilNextCheckupTitle(nextCheckupDay: nextCheckup) == "次の健診（11月9日）まで")
         // 完了したものは「ほか」に数えない。
-        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "ほかのやること（2 件）も表示")
+        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "ほかのタスク（2 件）も表示")
     }
 
     @Test func saysBackToTheListWhenThereAreNoOthers() {
@@ -276,7 +276,7 @@ struct TodoListTests {
             entry("完了", completedAt: added(10)),
         ]
 
-        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "やることの一覧に戻る")
+        #expect(TodoList.showOthersButtonTitle(entries, nextCheckupDay: nextCheckup) == "タスクの一覧に戻る")
     }
 
     // MARK: - 行の文（R-103、R-107）

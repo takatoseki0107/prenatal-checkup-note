@@ -68,4 +68,13 @@ struct TodoDueChoiceTests {
         // 次の健診の日付がなくなっていたら、その日は「日付を選ぶ」で選んだ状態にする。
         #expect(initial(nextCheckup, next: nil) == .pickDate)
     }
+
+    @Test func hidesTheNextCheckupButtonForTheCheckupBeingWritten() {
+        // メモを書いている日の健診がまだ「次の健診」に入っているときは、「次の健診まで」を出さない（R-107）。
+        #expect(TodoDueChoice.offeredNextCheckupDay(today, memoVisitDay: today) == nil)
+        #expect(TodoDueChoice.available(today: today, nextCheckupDay: TodoDueChoice.offeredNextCheckupDay(today, memoVisitDay: today)) == [.noDue, .today, .tomorrow, .oneWeek, .pickDate])
+        // 次の健診の日付をもう入れ直していれば、その日を使う。
+        #expect(TodoDueChoice.offeredNextCheckupDay(nextCheckup, memoVisitDay: today) == nextCheckup)
+        #expect(TodoDueChoice.offeredNextCheckupDay(nil, memoVisitDay: today) == nil)
+    }
 }
