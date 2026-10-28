@@ -20,11 +20,14 @@ struct DueDatePage: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
 
                 Section {
-                    BenefitRow(systemImage: "heart.fill", color: AppColors.pink, text: "今日の妊娠週数を表示します")
-                    BenefitRow(systemImage: "calendar", color: .accentColor, text: "次の健診の日付の目安を、時期に合った間隔で入れます")
+                    // 2 行を 1 つの行にまとめる（別々の行にすると、行の間が見本より大きくあいた）。
+                    VStack(alignment: .leading, spacing: 10) {
+                        BenefitRow(systemImage: "heart.fill", color: AppColors.pink, text: "今日の妊娠週数を表示します")
+                        BenefitRow(systemImage: "calendar", color: .accentColor, text: "次の健診の日付の目安を、時期に合った間隔で入れます")
+                    }
+                    .padding(.vertical, 4)
                 }
                 .listRowBackground(AppColors.skyCard)
-                .listRowSeparator(.hidden)
 
                 Section {
                     DueDateInputRows(entry: $entry)
@@ -82,21 +85,11 @@ struct DueDatePage: View {
     /// カレンダーの絵と見出し。
     private var heading: some View {
         VStack(spacing: 8) {
-            ZStack(alignment: .bottom) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 52, weight: .regular))
-                    // ピンクの丸は、ダークでも明るいままなので、カレンダーも決まった青にする。
-                    .foregroundStyle(AppColors.headerIconBlue)
-                Image(systemName: "heart.fill")
-                    .font(.system(size: 16))
-                    .foregroundStyle(AppColors.pink)
-                    .padding(.bottom, 9)
-            }
-            .frame(width: 120, height: 120)
-            .background(Circle().fill(AppColors.headerTintPink))
-            .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-            .accessibilityHidden(true)
-            .padding(.bottom, 12)
+            CalendarHeartIcon()
+                .frame(width: 120, height: 120)
+                .background(Circle().fill(AppColors.headerTintPink))
+                .accessibilityHidden(true)
+                .padding(.bottom, 12)
 
             Text("出産予定日を入れましょう")
                 .font(.maru(.title2))
@@ -111,6 +104,42 @@ struct DueDatePage: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
         .padding(.bottom, 4)
+    }
+}
+
+/// 白いカレンダーの中にハートがある絵（見本と同じ形）。
+///
+/// iOS の標準のカレンダーの印は日付のます目が入っていて、ハートと重なって見本と違って見えた（開発者の指摘）ので、形を描く。
+/// ピンクの丸はダークでも明るいままなので、線は決まった青にする。
+private struct CalendarHeartIcon: View {
+    private let line: CGFloat = 3.5
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.white)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(AppColors.headerIconBlue, lineWidth: line)
+            // 上の帯の線。
+            Rectangle()
+                .fill(AppColors.headerIconBlue)
+                .frame(height: line)
+                .padding(.horizontal, line / 2)
+                .offset(y: -11)
+            Image(systemName: "heart.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(Color(red: 0.91, green: 0.52, blue: 0.61))
+                .offset(y: 6)
+        }
+        .frame(width: 60, height: 54)
+        // 上の 2 つの留め具。
+        .overlay(alignment: .top) {
+            HStack(spacing: 22) {
+                Capsule().fill(AppColors.headerIconBlue).frame(width: line, height: 12)
+                Capsule().fill(AppColors.headerIconBlue).frame(width: line, height: 12)
+            }
+            .offset(y: -6)
+        }
     }
 }
 

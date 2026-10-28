@@ -112,13 +112,14 @@ struct WelcomePage: View {
 
     /// 下の地の色のところの中身。上の角を丸くした地の色は、`body` で画面の下までのばしてから塗る。
     private var features: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        // 見本と同じくらいのゆとりにする。最初は行の間が詰まって、紹介が上に寄って見えた（開発者の指摘）。
+        VStack(alignment: .leading, spacing: 20) {
             ForEach(WelcomeFeature.all, id: \.title) { feature in
                 WelcomeFeatureRow(feature: feature)
             }
         }
         .padding(.horizontal, 24)
-        .padding(.top, 26)
+        .padding(.top, 30)
         .padding(.bottom, 16)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -138,7 +139,7 @@ private struct WelcomeFeatureRow: View {
                 .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(feature.title)
                     .font(.maru(.headline))
                     .fontWeight(.bold)
@@ -150,9 +151,12 @@ private struct WelcomeFeatureRow: View {
                             .accessibilityHidden(true)
                         Text(bullet)
                             .foregroundStyle(.secondary)
+                            .lineSpacing(4)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .font(.maru(.footnote))
+                    // 箇条書きどうしの間も少しあける。
+                    .padding(.bottom, bullet == feature.bullets.last ? 0 : 3)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
