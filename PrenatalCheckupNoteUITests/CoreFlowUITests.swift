@@ -135,9 +135,12 @@ final class CoreFlowUITests: XCTestCase {
         return app
     }
 
-    /// 初めて開いたときの「はじめに」を、「あとで入れる」で閉じる。
+    /// 初めて開いたときの「はじめに」を、「つぎへ」で 2 枚目に進み、「あとで入れる」で閉じる（5.11 で 2 枚に分けた）。
     @MainActor
     private func skipOnboarding(_ app: XCUIApplication) {
+        let next = app.buttons["つぎへ"]
+        XCTAssertTrue(next.waitForExistence(timeout: timeout))
+        next.tap()
         let later = app.buttons["あとで入れる"]
         XCTAssertTrue(later.waitForExistence(timeout: timeout))
         later.tap()
