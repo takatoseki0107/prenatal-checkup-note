@@ -6,6 +6,8 @@ import SwiftData
 /// 本当のデータとは別の保存場所（`AppDataStore.makeSampleContainer`）に入れる。本当のデータとお知らせには触れない。
 /// 日付は今日から数えて作るので、いつ見せても「今日は妊娠 24 週 3 日、次の健診は 2 週間後」になる。
 /// 2 週間前のメモには、コードで描いた見本の絵を 2 枚付ける（段階 F3、`SampleImages`）。本当の写真は使わない。
+/// タスク（5.10）は、一覧のまとまり（期限なし・期限を過ぎた・今日・日付・次の健診の日）と、緑のチェック・完了したタスク・
+/// 健診後メモから追加したタスクが一通り見えるように入れる（ToDo 4）。
 enum SampleData {
     /// 今日の妊娠週数が 24 週 3 日になる出産予定日（今日から 109 日後。280 − 171 = 109）。
     static let daysUntilDueDate = 109
@@ -57,7 +59,7 @@ enum SampleData {
                 ]
             ),
         ]
-        var newestMemoID: UUID?
+        var memoIDs: [Int: UUID] = [:]
         for memo in memos {
             let model = CheckupMemo(
                 id: UUID(),
@@ -67,9 +69,7 @@ enum SampleData {
                 createdAt: now
             )
             context.insert(model)
-            if newestMemoID == nil {
-                newestMemoID = model.id
-            }
+            memoIDs[memo.daysAgo] = model.id
             for (offset, item) in memo.items.enumerated() {
                 let memoItem = MemoItem(questionText: item.question, answer: item.answer, note: item.note, sortOrder: offset)
                 context.insert(memoItem)
@@ -79,7 +79,7 @@ enum SampleData {
 
         // 2 週間前のメモに、見本の絵を 2 枚付ける（段階 F3）。紹介動画で写真の機能を見せるため。
         // 本当の写真と同じ道筋（PhotoProcessing）で、大きい画像と小さい画像を作る。
-        if let newestMemoID {
+        if let newestMemoID = memoIDs[14] {
             for (offset, data) in [SampleImages.picture(), SampleImages.handout()].enumerated() {
                 let photo = try PhotoProcessing.prepare(data)
                 context.insert(MemoPhoto(
@@ -104,7 +104,50 @@ enum SampleData {
             context.insert(BringItem(name: name, isChecked: offset == 0, sortOrder: offset))
         }
 
+        insertTodos(into: context, today: today, now: now, memoIDs: memoIDs)
+
         try context.save()
+    }
+
+    /// タスク（5.10、ToDo 4）。紹介動画で、一覧のまとまり・緑のチェック・完了・健診後メモからの追加を見せるため。
+    ///
+    /// - 期限を過ぎた 1 件と今日の 2 件で、タブの数は 3。
+    /// - 次の健診（2 週間後）までのものは 5 件（健診予定のカードに出る）。そのうち期限を過ぎたものが 1 件。
+    /// - 2 週間前のメモから追加した「受診票に記入する」は、期限が次の健診の日。6 週間前のメモから追加した「母親学級の申し込み」は完了済み。
+    private static func insertTodos(into context: ModelContext, today: CalendarDay, now: Date, memoIDs: [Int: UUID]) {
+        let nextCheckupDay = today.adding(days: 14)
+        let items: [TodoItem] = [
+            TodoItem(
+                title: "里帰り先の産院に分娩予約の電話をする",
+                note: "平日 14 時〜16 時",
+                dueDay: today.adding(days: -2),
+                isStarred: true,
+                createdAt: now.addingTimeInterval(-3 * 86_400)
+            ),
+            TodoItem(title: "産休の届けを会社に出す", dueDay: today, createdAt: now.addingTimeInterval(-60)),
+            TodoItem(title: "母子手帳ケースを買う", dueDay: today, isChecked: true, createdAt: now.addingTimeInterval(-50)),
+            TodoItem(title: "ベビーベッドのレンタルを調べる", dueDay: today.adding(days: 7), createdAt: now.addingTimeInterval(-40)),
+            TodoItem(
+                title: "血液検査の受診票に記入する",
+                note: "健診の前の日までに",
+                dueDay: nextCheckupDay,
+                originVisitDay: today.adding(days: -14),
+                originMemoID: memoIDs[14],
+                createdAt: now.addingTimeInterval(-14 * 86_400)
+            ),
+            TodoItem(title: "入院の準備のリストを作る", createdAt: now.addingTimeInterval(-30)),
+            TodoItem(
+                title: "母親学級の申し込み",
+                dueDay: today.adding(days: -35),
+                completedAt: now.addingTimeInterval(-36 * 86_400),
+                originVisitDay: today.adding(days: -42),
+                originMemoID: memoIDs[42],
+                createdAt: now.addingTimeInterval(-42 * 86_400)
+            ),
+        ]
+        for item in items {
+            context.insert(item)
+        }
     }
 }
 
