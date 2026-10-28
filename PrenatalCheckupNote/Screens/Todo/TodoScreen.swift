@@ -75,6 +75,14 @@ struct TodoScreen: View {
         .onScrolledPastHeader { isShowingInlineTitle = $0 }
         .screenHeaderTitle("タスク", isShown: isShowingInlineTitle)
         .toolbar {
+            // 使い方（5.12、R-116）。右上のいちばん左に置く。
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    router.sheet = .help(.todo)
+                } label: {
+                    Label("使い方", systemImage: "questionmark.circle")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     router.sheet = .settings
