@@ -59,12 +59,8 @@ struct WelcomePage: View {
                 .scaledToFit()
                 .frame(width: 190, height: 190)
                 .clipShape(RoundedRectangle(cornerRadius: 44, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 44, style: .continuous)
-                        .stroke(.white, lineWidth: 5)
-                }
                 .shadow(color: Color(red: 0.18, green: 0.38, blue: 0.6).opacity(0.2), radius: 11, y: 8)
-                .accessibilityLabel("妊婦さんと先生がノートを見ている絵")
+                .accessibilityLabel("おなかにハートがある妊婦さんを描いたノートの絵")
                 .padding(.bottom, 24)
 
             Text("妊婦健診ノートへ")
